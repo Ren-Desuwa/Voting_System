@@ -12,40 +12,34 @@ const positionNames = {
 
 const candidates = {
     g11: [
-        { name: "Juan Dela Cruz", party: "Team Payaman", img: "img/juan.jpg" }, 
-        { name: "Maria Clara", party: "Team Bakulaw", img: "img/maria.jpg" },
-        { name: "Angelo Reyes", party: "Team Agila", img: "img/angelo.jpg" },
-        { name: "Sofia Santos", party: "Team Tigre", img: "img/sofia.jpg" }
+        { name: "Juan Dela Cruz", party: "Team Payaman", img: "assets/Sample69.jpg" }, 
+        { name: "Maria Clara", party: "Team Bakulaw", img: "assets/Sample1.jpg" },
+        { name: "Angelo Reyes", party: "Team Agila", img: "assets/Sample2.jpg" }
     ],
     g12: [
-        { name: "Jose Rizal", party: "Team HotDog", img: "img/jose.jpg" }, 
-        { name: "Andres Bonifacio", party: "Geng Geng", img: "img/andres.jpg" },
-        { name: "Emilio Aguinaldo", party: "Team Agila", img: "img/emilio.jpg" },
-        { name: "Apolinario Mabini", party: "Team Tigre", img: "img/apolinario.jpg" }
+        { name: "Jose Rizal", party: "Team HotDog", img: "assets/Sample3.jpg" }, 
+        { name: "Andres Bonifacio", party: "Geng Geng", img: "assets/Sample4.jpg" },
+        { name: "Emilio Aguinaldo", party: "Team Agila", img: "assets/Sample5.jpg" }
     ],
     treasurer: [
-        { name: "Robert Martinez", party: "Team Payaman", img: "img/robert.jpg" }, 
-        { name: "Jennifer Lee", party: "Team Bakulaw", img: "img/jennifer.jpg" },
-        { name: "Ricardo Dalisay", party: "Team Agila", img: "img/ricardo.jpg" },
-        { name: "Liza Soberano", party: "Team Tigre", img: "img/liza.jpg" }
+        { name: "Robert Martinez", party: "Team Payaman", img: "assets/Sample6.jpg" }, 
+        { name: "Jennifer Lee", party: "Team Bakulaw", img: "assets/Sample7.jpg" },
+        { name: "Ricardo Dalisay", party: "Team Agila", img: "assets/Sample8.jpg" }
     ],
     secretary: [
-        { name: "Emily Rodriguez", party: "Team Payaman", img: "img/emily.jpg" }, 
-        { name: "David Wilson", party: "Team Bakulaw", img: "img/david.jpg" },
-        { name: "Bea Alonzo", party: "Team Agila", img: "img/bea.jpg" },
-        { name: "John Lloyd Cruz", party: "Team Tigre", img: "img/john.jpg" }
+        { name: "Emily Rodriguez", party: "Team Payaman", img: "assets/Sample9.jpg" }, 
+        { name: "David Wilson", party: "Team Bakulaw", img: "assets/Sample10.jpg" },
+        { name: "Bea Alonzo", party: "Team Agila", img: "assets/Sample11.jpg" }
     ],
     vp: [
-        { name: "Amanda Taylor", party: "Team Payaman", img: "img/amanda.jpg" }, 
-        { name: "Christopher Davis", party: "Team Bakulaw", img: "img/christopher.jpg" },
-        { name: "Dingdong Dantes", party: "Team Agila", img: "img/dingdong.jpg" },
-        { name: "Marian Rivera", party: "Team Tigre", img: "img/marian.jpg" }
+        { name: "Amanda Taylor", party: "Team Payaman", img: "assets/Sample12.jpg" }, 
+        { name: "Christopher Davis", party: "Team Bakulaw", img: "assets/Sample13.jpg" },
+        { name: "Dingdong Dantes", party: "Team Agila", img: "assets/Sample14.jpg" }
     ],
     president: [
-        { name: "James Thompson", party: "Team Payaman", img: "img/james.jpg" }, 
-        { name: "Margaret Williams", party: "Team Bakulaw", img: "img/margaret.jpg" },
-        { name: "Vic Sotto", party: "Team Agila", img: "img/vic.jpg" },
-        { name: "Joey De Leon", party: "Team Tigre", img: "img/joey.jpg" }
+        { name: "James Thompson", party: "Team Payaman", img: "assets/Sample15.jpg" }, 
+        { name: "Margaret Williams", party: "Team Bakulaw", img: "assets/Sample16.jpg" },
+        { name: "Vic Sotto", party: "Team Agila", img: "assets/Sample17.jpg" }
     ]
 };
 
@@ -106,7 +100,7 @@ function renderCandidates() {
 
         // Check if candidate has an image; otherwise, use the emoji placeholder
         const photoContent = candidate.img 
-            ? `<img src="${candidate.img}" alt="${candidate.name}" onerror="this.style.display='none';">👤`
+            ? `<img src="${candidate.img}" alt="${candidate.name}" onerror="this.onerror=null;this.src='assets/CZSHS_logo.png';">`
             : `👤`;
 
         card.innerHTML = `

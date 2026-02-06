@@ -4,6 +4,40 @@
             box-sizing: border-box;
         }
 
+        /* ========================================
+           COLOR PALETTE - Change colors here!
+           ======================================== */
+        :root {
+            /* Primary Colors */
+            --primary-color: #eacb66;
+            --primary-dark: #ca8230;
+            
+            /* Secondary Colors */
+            --secondary-color: #e0e0e0;
+            --secondary-dark: #d0d0d0;
+            
+            /* Accent Colors */
+            --success-color: #28a745;
+            --hover-bg: #f8f9ff;
+            
+            /* Text Colors */
+            --text-primary: #333;
+            --text-secondary: #666;
+            --text-light: #999;
+            
+            /* Border Colors */
+            --border-light: #e0e0e0;
+            --border-primary: var(--primary-color);
+            
+            /* Background Colors */
+            --bg-white: white;
+            --bg-disabled: #ccc;
+            
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            --gradient-bar: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        }
+        
         .page {
             display: none; /* This ensures pages are completely removed from view */
         }
@@ -15,7 +49,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--gradient-primary);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -25,7 +59,7 @@
 
         .container {
             overflow: hidden; 
-            background: white;
+            background: var(--bg-white);
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             max-width: 800px;
@@ -39,13 +73,13 @@
         }
 
         .header h1 {
-            color: #333;
+            color: var(--text-primary);
             font-size: 2.5em;
             margin-bottom: 10px;
         }
 
         .progress-bar {
-            background: #e0e0e0;
+            background: var(--secondary-color);
             height: 8px;
             border-radius: 10px;
             margin: 20px 0;
@@ -53,7 +87,7 @@
         }
 
         .progress-fill {
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            background: var(--gradient-bar);
             height: 100%;
             transition: width 0.3s ease;
         }
@@ -93,9 +127,38 @@
 
         .candidates-grid {
             display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Auto-fit adjusts columns based on available space */
             gap: 15px;
             margin-bottom: 30px;
+            justify-items: center; /* Center the cards */
+            max-width: 100%;
         }
+        
+        /* Make sure cards have consistent fixed dimensions */
+        .candidate-card {
+            width: 220px; /* Fixed width */
+            min-height: 280px; /* Fixed minimum height */
+        }
+        
+        /* Limit grid width when there are fewer candidates */
+        .candidates-grid:has(.candidate-card:nth-child(3):last-child) {
+            max-width: 670px; /* 3 candidates */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .candidates-grid:has(.candidate-card:nth-child(2):last-child) {
+            max-width: 500px; /* 2 candidates */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .candidates-grid:has(.candidate-card:nth-child(1):last-child) {
+            max-width: 250px; /* 1 candidate */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
 
         .logo-container {
             text-align: center;
@@ -106,7 +169,7 @@
             width: 120px;
             height: 120px;
             margin: 0 auto 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--gradient-primary);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -124,25 +187,29 @@
         }
 
         .candidate-card {
-            border: 2px solid #e0e0e0;
+            border: 2px solid var(--border-light);
             border-radius: 12px;
             padding: 20px;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
-            align-items: center;
-            gap: 20px;
+            flex-direction: column; /* Stack items vertically */
+            align-items: center; /* Center items horizontally */
+            gap: 15px;
+            text-align: center; /* Center text */
+            box-sizing: border-box; /* Include padding and border in width/height */
         }
 
         .candidate-card:hover {
-            border-color: #667eea;
-            background: #f8f9ff;
-            transform: translateX(5px);
+            border-color: var(--border-primary);
+            background: var(--hover-bg);
+            transform: translateY(-5px); /* Lift up instead of slide right */
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
         }
 
         .candidate-card.selected {
-            border-color: #667eea;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: var(--border-primary);
+            background: var(--gradient-primary);
             color: white;
         }
 
@@ -151,14 +218,14 @@
             height: 80px;
             border-radius: 50%;
             object-fit: cover;
-            border: 3px solid #e0e0e0;
+            border: 3px solid var(--border-light);
             flex-shrink: 0;
             background: #f0f0f0;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 2em;
-            color: #999;
+            color: var(--text-light);
         }
 
         .candidate-card.selected .candidate-photo {
@@ -175,7 +242,7 @@
         .candidate-radio {
             width: 24px;
             height: 24px;
-            border: 2px solid #667eea;
+            border: 2px solid var(--border-primary);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -192,7 +259,7 @@
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background: #667eea;
+            background: var(--primary-color);
             display: none;
         }
 
@@ -233,7 +300,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--gradient-primary);
             color: white;
         }
 
@@ -243,18 +310,18 @@
         }
 
         .btn-primary:disabled {
-            background: #ccc;
+            background: var(--bg-disabled);
             cursor: not-allowed;
             transform: none;
         }
 
         .btn-secondary {
-            background: #e0e0e0;
-            color: #333;
+            background: var(--secondary-color);
+            color: var(--text-primary);
         }
 
         .btn-secondary:hover {
-            background: #d0d0d0;
+            background: var(--secondary-dark);
         }
 
         .summary-section {
@@ -262,15 +329,15 @@
         }
 
         .summary-item {
-            background: #f8f9ff;
-            border-left: 4px solid #667eea;
+            background: var(--hover-bg);
+            border-left: 4px solid var(--primary-color);
             padding: 20px;
             margin-bottom: 15px;
             border-radius: 8px;
         }
 
         .summary-position {
-            color: #667eea;
+            color: var(--primary-color);
             font-weight: bold;
             margin-bottom: 8px;
             font-size: 0.9em;
@@ -280,12 +347,12 @@
         .summary-candidate {
             font-size: 1.3em;
             font-weight: bold;
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 5px;
         }
 
         .summary-party {
-            color: #666;
+            color: var(--text-secondary);
         }
 
         .summary-header {
@@ -294,13 +361,13 @@
         }
 
         .summary-header h2 {
-            color: #333;
+            color: var(--text-primary);
             font-size: 2em;
             margin-bottom: 10px;
         }
 
         .summary-header p {
-            color: #666;
+            color: var(--text-secondary);
         }
 
         .submit-btn {
@@ -315,7 +382,7 @@
         }
 
         .success-message h2 {
-            color: #28a745;
+            color: var(--success-color);
             font-size: 2.5em;
             margin-bottom: 20px;
         }
@@ -330,7 +397,7 @@
         }
 
         .stats-position {
-            background: white;
+            background: var(--bg-white);
             border-radius: 12px;
             padding: 25px;
             margin-bottom: 30px;
@@ -338,10 +405,10 @@
         }
 
         .stats-position h3 {
-            color: #667eea;
+            color: var(--primary-color);
             margin-bottom: 20px;
             font-size: 1.5em;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 2px solid var(--primary-color);
             padding-bottom: 10px;
         }
 
@@ -351,9 +418,9 @@
             justify-content: space-between;
             padding: 15px;
             margin-bottom: 10px;
-            background: #f8f9ff;
+            background: var(--hover-bg);
             border-radius: 8px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid var(--primary-color);
         }
 
         .stats-candidate-info {
@@ -363,12 +430,12 @@
         .stats-candidate-name {
             font-weight: bold;
             font-size: 1.1em;
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 5px;
         }
 
         .stats-candidate-party {
-            color: #666;
+            color: var(--text-secondary);
             font-size: 0.9em;
         }
 
@@ -379,31 +446,31 @@
         .vote-count {
             font-size: 2em;
             font-weight: bold;
-            color: #667eea;
+            color: var(--primary-color);
             display: block;
         }
 
         .vote-percentage {
             font-size: 0.9em;
-            color: #666;
+            color: var(--text-secondary);
         }
 
         .stats-bar {
             margin-top: 10px;
             height: 8px;
-            background: #e0e0e0;
+            background: var(--secondary-color);
             border-radius: 4px;
             overflow: hidden;
         }
 
         .stats-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            background: var(--gradient-bar);
             transition: width 0.5s ease;
         }
 
         .total-votes {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--gradient-primary);
             color: white;
             padding: 20px;
             border-radius: 12px;
