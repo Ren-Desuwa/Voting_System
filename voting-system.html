@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cielito Zamora Senior High</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="page active" id="pageHome">
+            <div class="logo-container">
+                <div class="logo-placeholder">🗳️</div>
+            </div>
+            <div class="header">
+                <h1>Cielito Zamora Senior High</h1>
+                <p style="color: #666; margin-top: 10px;">Welcome to the official voting platform</p>
+            </div>
+            <div style="text-align: center; margin: 50px 0;">
+                <button class="btn btn-primary" style="padding: 20px 60px; font-size: 1.3em;" onclick="startVoting()">
+                    Start Voting →
+                </button>
+            </div>
+        </div>
+
+        <div id="votingUI" style="display: none;">
+            <div class="header">
+                <h1>Election Voting System</h1>
+                <p id="pageIndicator" style="color: #667eea; font-weight: bold; margin-top: 5px;"></p>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="page" id="votingPage">
+            <h2 class="position-title" id="displayPositionTitle"></h2>
+            <p class="position-subtitle" id="displayPositionSubtitle"></p>
+            <div class="candidates-grid" id="candidatesGrid"></div>
+            <div class="navigation">
+                <button class="btn btn-secondary" id="prevBtn" onclick="handlePrevious()">← Back</button>
+                <button class="btn btn-primary" id="nextBtn" onclick="handleNext()" disabled>Next →</button>
+            </div>
+        </div>
+
+        <div class="page" id="pageSummary">
+            <div class="summary-header">
+                <h2>📋 Vote Summary</h2>
+                <p>Please review your selections before submitting</p>
+            </div>
+            <div class="summary-section" id="summaryContent"></div>
+            <div class="navigation">
+                <button class="btn btn-secondary" onclick="showVotingPage()">← Back</button>
+                <button class="btn btn-primary submit-btn" onclick="submitVote()">Submit Vote ✓</button>
+            </div>
+        </div>
+
+        <div class="page" id="pageSuccess">
+            <div class="success-message">
+                <div class="success-icon">✓</div>
+                <h2>Vote Submitted Successfully!</h2>
+                <button class="btn btn-secondary" style="margin-top: 20px;" onclick="location.reload()">Done</button>
+            </div>
+        </div>
+    </div>
+    <script src="js/script.js"></script>
+</body>
+</html>
