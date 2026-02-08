@@ -104,7 +104,7 @@ function renderCandidates() {
             // Handle Image (Use placeholder if empty)
             const photoContent = candidate.img 
                 ? `<img src="${candidate.img}" alt="${candidate.name}" onerror="this.onerror=null;this.src='assets/CZSHS_logo.png';">`
-                : `<div style="font-size:3em;">👤</div>`;
+                : `👤`;
 
             card.innerHTML = `
                 <div class="candidate-photo">
@@ -122,9 +122,25 @@ function renderCandidates() {
 }
 
 function selectCandidate(index, key) {
-    votes[key] = index; // Store the array index of the selected candidate
-    renderCandidates(); // Re-render to show selection highlight
-    updateUI();         // Update "Next" button state
+    // votes[key] = index; // Store the array index of the selected candidate
+    // renderCandidates(); // Re-render to show selection highlight
+    // updateUI();         // Update "Next" button state
+
+    votes[key] = index;
+    
+    // Find all cards in the grid
+    const cards = document.querySelectorAll('.candidate-card');
+    
+    // Simply toggle the 'selected' class on the existing HTML elements
+    cards.forEach((card, i) => {
+        if (i === index) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
+        }
+    });
+
+    updateUI(); 
 }
 
 function updateUI() {

@@ -367,14 +367,18 @@ async function loadAndRenderParty(partyName) {
 }
 
 function renderPartyMode(party) {
+    // Remove active class from all nav items first
     document.querySelectorAll('.col-nav .nav-item').forEach(el => el.classList.remove('active'));
-    const items = document.querySelectorAll('.col-nav .nav-item');
-    items.forEach(el => {
-        if(el.textContent.trim().includes(party.name)) {
-            el.classList.add('active');
-        }
-    });
     
+    // Only add active class if this is an existing party (has a name)
+    if(party.name) {
+        const items = document.querySelectorAll('.col-nav .nav-item');
+        items.forEach(el => {
+            if(el.textContent.trim().includes(party.name)) {
+                el.classList.add('active');
+            }
+        });
+    }
     currentPartyId = party.id;
     
     const container = document.getElementById('setupDynamicContent');
@@ -429,7 +433,7 @@ function renderCandidatesList(candidates) {
     return candidates.map((c, index) => `
         <div class="cand-card" style="margin-bottom:15px; padding:15px; background:white; border:1px solid #eee; border-radius:8px;">
             <div style="display:flex; gap:15px; align-items:center;">
-                <div style="width:50px; height:50px; background:#ddd; border-radius:50%; overflow:hidden; flex-shrink:0;">
+                <div style="width:120px; height:120px; background:#ddd; border-radius:50%; overflow:hidden; flex-shrink:0;">
                     ${c.photo_url ? `<img src="${c.photo_url}" style="width:100%; height:100%; object-fit:cover;">` : '<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:1.5em;">👤</div>'}
                 </div>
                 <div style="flex:1;">
@@ -546,6 +550,10 @@ async function deleteParty(partyId, partyName) {
 }
 
 function resetPartyForm() {
+    // Remove active class from ALL nav items (including Global Settings)
+    document.querySelectorAll('.col-nav .nav-item').forEach(el => el.classList.remove('active'));
+    currentPartyId = null;
+    
     renderPartyMode({
         name: '',
         slogan: '',
