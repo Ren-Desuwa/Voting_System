@@ -351,7 +351,7 @@ async function clearAllSessions() {
 // ==========================================
 async function loadAndRenderParty(partyName) {
     try {
-        const res = await fetch('api/get_party_full.php?name=' + encodeURIComponent(partyName));
+        const res = await fetch('api/get_party_full.php?name=' + encodeURIComponent(partyName)+ '&t=' + new Date().getTime());
         const party = await res.json();
         
         if(!party.success) {
@@ -379,7 +379,7 @@ function renderPartyMode(party) {
     
     const container = document.getElementById('setupDynamicContent');
     container.innerHTML = `
-        <form id="partyForm" onsubmit="saveParty(event)" style="display: contents;">
+        <form id="partyForm" onsubmit="saveParty(event)" method="POST" style="display: contents;">
             <div class="col-content middle" style="padding:30px;">
                 <h3 style="margin-bottom:20px;">1. Party Details</h3>
                 
@@ -398,9 +398,16 @@ function renderPartyMode(party) {
                 <input type="file" name="party_logo" accept="image/*" style="margin-bottom:20px;">
                 ${party.logo_url ? `<img src="${party.logo_url}" style="max-width:100px; margin-bottom:10px; border:1px solid #ddd; border-radius:4px;">` : ''}
                 
-                <button type="submit" class="btn btn-primary" style="margin-top:20px; background: #d4a017; color:white; border:none; padding:15px; width:100%; border-radius:6px; font-weight:600; cursor:pointer;">
-                    💾 SAVE ENTIRE PARTY
-                </button>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-top:20px;">
+                    <button type="submit" class="btn btn-primary" style="background: #d4a017; color:white; border:none; padding:15px; border-radius:6px; font-weight:600; cursor:pointer;">
+                        💾 SAVE ENTIRE PARTY
+                    </button>
+                    ${party.id ? `
+                        <button type="button" onclick="deleteParty(${party.id}, '${party.name.replace(/'/g, "\\'")}')" style="background:#e74c3c; color:white; border:none; padding:15px; border-radius:6px; font-weight:600; cursor:pointer;">
+                            🗑️ DELETE PARTY
+                        </button>
+                    ` : ''}
+                </div>
             </div>
 
             <div class="col-content right" style="padding:30px; background:#fafafa;">
@@ -484,13 +491,57 @@ async function saveParty(event) {
         const result = await res.json();
         
         if(result.success) {
-            alert('Party saved successfully!');
-            await loadPartyList();
+            if(result.deleted) {
+                // Party was auto-deleted because it had no candidates
+                alert('⚠️ ' + result.message);
+                await loadPartyList();
+                renderSettingsMode(); // Return to settings view
+            } else {
+                alert('✓ Party saved successfully!');
+                await loadPartyList();
+            }
         } else {
             alert('Error: ' + result.message);
         }
     } catch(e) {
         alert('Network error: ' + e.message);
+    }
+}
+
+async function deleteParty(partyId, partyName) {
+    if(!confirm(`Are you sure you want to delete "${partyName}"?\n\nThis will permanently remove the party and ALL its candidates.\n\nThis action cannot be undone!`)) {
+        return;
+    }
+    
+    // Double confirmation for safety
+    const userInput = prompt(`⚠️ FINAL WARNING ⚠️\n\nYou are about to delete "${partyName}" and all associated candidates.\n\nType the party name exactly to confirm deletion:\n\n(Type: ${partyName})`);
+    
+    if(userInput !== partyName) {
+        if(userInput !== null) { // User didn't click cancel
+            alert('Party name did not match. Deletion cancelled.');
+        }
+        return;
+    }
+    
+    try {
+        const res = await fetch('api/delete_party.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `party_id=${partyId}`
+        });
+        
+        const result = await res.json();
+        
+        if(result.success) {
+            alert(`✓ "${partyName}" has been deleted successfully.`);
+            await loadPartyList();
+            renderSettingsMode(); // Return to settings view
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch(e) {
+        console.error(e);
+        alert('Network error while deleting party.');
     }
 }
 

@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS parties (
     name VARCHAR(100) NOT NULL,
     slogan VARCHAR(255),
     color VARCHAR(20) DEFAULT '#cccccc',
-    logo_url VARCHAR(255)
+    logo_url VARCHAR(255) DEFAULT NULL
 );
 
 -- Insert sample parties
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS candidates (
     position_id INT NOT NULL,
     party_id INT NOT NULL,
     full_name VARCHAR(150) NOT NULL,
-    photo_url VARCHAR(255),
+    photo_url VARCHAR(255) DEFAULT NULL,
     FOREIGN KEY (position_id) REFERENCES positions(id) ON DELETE CASCADE,
     FOREIGN KEY (party_id) REFERENCES parties(id) ON DELETE CASCADE
 );

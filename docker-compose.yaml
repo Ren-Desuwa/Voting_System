@@ -47,9 +47,26 @@ services:
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=true
       - TS_ACCEPT_DNS=false
-    # command: sh -c "tailscaled --tun=userspace-networking --statedir=/var/lib/tailscale & sleep 5 && tailscale up --authkey=$${TS_AUTHKEY} --hostname=$${TS_HOSTNAME} --accept-routes=false && tailscale serve --bg --https=443 --funnel http://web:80 && sleep infinity"
+    # command: sh -c "tailscaled --tun=userspace-networking --statedir=/var/lib/tailscale & sleep 5 && tailscale up --authkey=$${TS_AUTHKEY} --hostname=$${TS_HOSTNAME} --accept-routes=false && tailscale serve --bg --https=443 funnel http://web:80 && sleep infinity"
     depends_on:
       - web
+    command: >
+      sh -c "
+      echo 'Starting Tailscale Daemon...';
+      tailscaled --tun=userspace-networking --statedir=/var/lib/tailscale &
+      
+      echo 'Waiting for daemon to initialize...';
+      sleep 5;
+
+      echo 'Authenticating...';
+      tailscale up --authkey=$${TS_AUTHKEY} --hostname=czshs-vote --accept-routes=false --advertise-tags=tag:server;
+
+      echo 'Starting Public Funnel...';
+      tailscale funnel --bg --https=443 http://web:80;
+
+      echo 'Tailscale is Ready! Keeping container alive...';
+      sleep infinity;
+      "
 
 volumes:
   db_data:
