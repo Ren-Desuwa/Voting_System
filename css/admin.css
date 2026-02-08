@@ -1,0 +1,148 @@
+:root {
+    --bg-color: #f0f2f5; /* Soft gray background */
+    --card-bg: #ffffff;
+    --primary: #d4a017; /* Gold/Bronze accent from your sketch */
+    --primary-hover: #b88b14;
+    --border: #e1e4e8;
+    --text-main: #333;
+    --active-bg: #fffdf5;
+}
+
+body.admin-body {
+    background: var(--bg-color);
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.header-title {
+    text-align: center;
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+.header-title h1 { margin: 0; color: #333; }
+.back-link { text-decoration: none; color: #888; font-size: 0.9em; }
+
+/* The Big Center Card */
+.main-container {
+    width: 90%;
+    max-width: 1200px;
+    height: 80vh;
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Top Tabs */
+.top-nav {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: #fafafa;
+}
+
+.nav-tab {
+    padding: 20px 40px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #666;
+    border-bottom: 3px solid transparent;
+}
+
+.nav-tab.active {
+    color: var(--text-main);
+    border-bottom-color: var(--primary);
+    background: white;
+}
+
+/* Column Layouts */
+.col-nav {
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
+    background: #fff;
+}
+
+.col-content {
+    padding: 30px;
+    overflow-y: auto;
+}
+
+.col-content.middle { border-right: 1px solid var(--border); }
+.col-content.right { background: #fafafa; }
+
+/* Nav Items */
+.nav-item {
+    padding: 12px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #555;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-item:hover { background: #f5f5f5; }
+.nav-item.active { 
+    background: var(--active-bg); 
+    color: var(--primary); 
+    font-weight: bold; 
+    border: 1px solid #f0e6c5;
+}
+
+.separator-text {
+    font-size: 0.75em;
+    color: #aaa;
+    margin: 20px 0 10px 5px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.btn-new-party {
+    width: 100%;
+    padding: 10px;
+    margin-top: 15px;
+    border: 1px dashed #ccc;
+    background: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #666;
+}
+.btn-new-party:hover { border-color: var(--primary); color: var(--primary); }
+
+/* Form Elements */
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+/* Candidate Cards */
+.cand-card {
+    background: white;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Analytics Styles */
+.line-bar-container {
+    height: 8px; 
+    background:#eee; 
+    border-radius:4px; 
+    overflow:hidden; 
+    display:flex; 
+    margin-top:5px;
+}

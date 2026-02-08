@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - voting-network
+    environment:
+      - PHP_SESSION_SAVE_PATH=/tmp
+
+  db:
+    image: mariadb:10.6
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: voting_system
+    volumes:
+      - ./data/database.sql:/docker-entrypoint-initdb.d/init.sql
+      - db_data:/var/lib/mysql
+    networks:
+      - voting-network
+
+  # Tailscale - Provides stable remote access with custom hostname
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: election-tailscale
+    hostname: czshs-vote
+    restart: unless-stopped
+    volumes:
+      - tailscale_data:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    networks:
+      - voting-network
+    environment:
+      # IMPORTANT: Replace with your Tailscale auth key
+      # Get from: https://login.tailscale.com/admin/settings/keys
+      - TS_AUTHKEY=tskey-auth-kYRqotkDA621CNTRL-UqQoVvBJggGbh6jShxLXhGdqEAUT1EC3
+      - TS_HOSTNAME=czshs-vote
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=true
+      - TS_ACCEPT_DNS=false
+    # command: sh -c "tailscaled --tun=userspace-networking --statedir=/var/lib/tailscale & sleep 5 && tailscale up --authkey=$${TS_AUTHKEY} --hostname=$${TS_HOSTNAME} --accept-routes=false && tailscale serve --bg --https=443 --funnel http://web:80 && sleep infinity"
+    depends_on:
+      - web
+
+volumes:
+  db_data:
+  tailscale_data:
+
+networks:
+  voting-network:
