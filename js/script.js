@@ -1,5 +1,3 @@
-
-
 // js/script.js
 // 1. DYNAMIC DATA CONTAINERS
 let positionNames = {};
@@ -119,14 +117,26 @@ function renderCandidates() {
             grid.appendChild(card);
         });
     }
+    
+    // ADDED: Update abstain button state
+    const abstainBtn = document.getElementById('abstainBtn');
+    if (abstainBtn) {
+        if (votes[key] === 'abstain') {
+            abstainBtn.classList.add('selected');
+        } else {
+            abstainBtn.classList.remove('selected');
+        }
+    }
 }
 
 function selectCandidate(index, key) {
-    // votes[key] = index; // Store the array index of the selected candidate
-    // renderCandidates(); // Re-render to show selection highlight
-    // updateUI();         // Update "Next" button state
-
     votes[key] = index;
+    
+    // MODIFIED: Remove abstain selection when a candidate is selected
+    const abstainBtn = document.getElementById('abstainBtn');
+    if (abstainBtn) {
+        abstainBtn.classList.remove('selected');
+    }
     
     // Find all cards in the grid
     const cards = document.querySelectorAll('.candidate-card');
@@ -143,11 +153,29 @@ function selectCandidate(index, key) {
     updateUI(); 
 }
 
+// ADDED: Function to handle abstain selection
+function selectAbstain() {
+    const currentKey = positionKeys[currentStep - 1];
+    
+    // Set vote to special value 'abstain'
+    votes[currentKey] = 'abstain';
+    
+    // Remove selection from all candidate cards
+    const cards = document.querySelectorAll('.candidate-card');
+    cards.forEach(card => card.classList.remove('selected'));
+    
+    // Highlight abstain button
+    const abstainBtn = document.getElementById('abstainBtn');
+    abstainBtn.classList.add('selected');
+    
+    updateUI();
+}
+
 function updateUI() {
     const currentKey = positionKeys[currentStep - 1];
     const nextBtn = document.getElementById('nextBtn');
     
-    // Enable "Next" only if a selection is made
+    // MODIFIED: Enable "Next" if a selection is made OR abstain is selected
     if (votes[currentKey] !== null) {
         nextBtn.disabled = false;
     } else {
@@ -191,17 +219,41 @@ function showSummary() {
     content.innerHTML = '';
     
     positionKeys.forEach(key => {
-        const index = votes[key];
-        const candidate = candidates[key][index];
+        const selection = votes[key];
         
-        const item = document.createElement('div');
-        item.className = 'summary-item';
-        item.innerHTML = `
-            <div class="summary-position">${positionNames[key]}</div>
-            <div class="summary-candidate">${candidate.name}</div>
-            <div class="summary-party">${candidate.party || 'Independent'}</div>
-        `;
-        content.appendChild(item);
+        // MODIFIED: Handle abstain votes
+        if (selection === 'abstain') {
+            const item = document.createElement('div');
+            item.className = 'summary-item';
+            item.innerHTML = `
+                <div class="summary-position">${positionNames[key]}</div>
+                <div class="summary-candidate-photo">
+                    ⊘
+                </div>
+                <div class="summary-candidate">Abstained</div>
+                <div class="summary-party">No vote cast for this position</div>
+            `;
+            content.appendChild(item);
+        } else {
+            const candidate = candidates[key][selection];
+            
+            // Handle Image (Use placeholder if empty)
+            const photoContent = candidate.img 
+                ? `<img src="${candidate.img}" alt="${candidate.name}" onerror="this.onerror=null;this.src='assets/CZSHS_logo.png';">`
+                : `👤`;
+            
+            const item = document.createElement('div');
+            item.className = 'summary-item';
+            item.innerHTML = `
+                <div class="summary-position">${positionNames[key]}</div>
+                <div class="summary-candidate-photo">
+                    ${photoContent}
+                </div>
+                <div class="summary-candidate">${candidate.name}</div>
+                <div class="summary-party">${candidate.party || 'Independent'}</div>
+            `;
+            content.appendChild(item);
+        }
     });
 
     document.getElementById('progressFill').style.width = `100%`;
@@ -214,13 +266,16 @@ async function submitVote() {
     submitBtn.disabled = true;
     submitBtn.innerText = "Submitting...";
 
-    // Prepare payload: Map the selection index back to the database ID
+    // MODIFIED: Prepare payload handling abstain votes
     const payload = {};
     positionKeys.forEach(key => {
-        const index = votes[key];
-        if (index !== null) {
+        const selection = votes[key];
+        if (selection === 'abstain') {
+            // Send 'abstain' as a special value to the server
+            payload[key] = 'abstain';
+        } else if (selection !== null) {
             // Get the actual Database ID from the candidate object
-            payload[key] = candidates[key][index].id;
+            payload[key] = candidates[key][selection].id;
         }
     });
 

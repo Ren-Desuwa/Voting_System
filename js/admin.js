@@ -3,6 +3,7 @@ let positions = [];
 let parties = [];
 let analyticsData = null;
 let currentPartyId = null;
+ // For drag-and-drop position reordering
 
 document.addEventListener('DOMContentLoaded', () => {
     loadPositions();
@@ -140,13 +141,22 @@ async function renderSettingsMode() {
                         <button type="button" onclick="addPosition()" style="background:#d4a017; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer;">Add</button>
                     </div>
                     <div id="settingsPosList" style="max-height:450px; overflow-y:auto;">
-                        ${positions.map(p => `
-                            <div style="padding:12px; border:1px solid #eee; margin-bottom:8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; background:#fafafa;">
-                                <span style="font-weight:500;">${p.title}</span>
-                                <span onclick="deletePosition(${p.id})" style="color:#e74c3c; cursor:pointer; font-size:1.5em; line-height:1;">&times;</span>
+                        ${positions.map((p, index) => `
+                            <div class="position-item" data-position-id="${p.id}" data-order="${index}" draggable="true" style="padding:12px; border:1px solid #eee; margin-bottom:8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; background:#fafafa; cursor:move; transition: all 0.3s;">
+                                <div style="display:flex; align-items:center; gap:10px; flex:1;">
+                                    <span style="color:#999; cursor:grab; font-size:1.2em;" title="Drag to reorder">⋮⋮</span>
+                                    <span style="font-weight:500;">${p.title}</span>
+                                    <span style="color:#999; font-size:0.85em;">(Order: ${index + 1})</span>
+                                </div>
+                                <div style="display:flex; gap:5px; align-items:center;">
+                                    <button onclick="movePositionUp(${index})" ${index === 0 ? 'disabled' : ''} style="background:none; border:1px solid #d4a017; color:#d4a017; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.9em;" title="Move up">▲</button>
+                                    <button onclick="movePositionDown(${index})" ${index === positions.length - 1 ? 'disabled' : ''} style="background:none; border:1px solid #d4a017; color:#d4a017; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.9em;" title="Move down">▼</button>
+                                    <span onclick="deletePosition(${p.id})" style="color:#e74c3c; cursor:pointer; font-size:1.5em; line-height:1; padding:5px; margin-left:5px;" title="Delete position">&times;</span>
+                                </div>
                             </div>
                         `).join('')}
                     </div>
+                    <p style="color:#999; font-size:0.85em; margin-top:10px;">💡 Drag positions or use ▲▼ buttons to reorder</p>
                 </div>
                 
                 <!-- COLUMN 3: Quick Stats -->
@@ -165,6 +175,9 @@ async function renderSettingsMode() {
     
     // Load Tailscale URL
     loadTailscaleUrl();
+    
+    // Initialize drag-and-drop for position reordering
+    initializePositionDragAndDrop();
 }
 
 
@@ -367,11 +380,11 @@ async function loadAndRenderParty(partyName) {
 }
 
 function renderPartyMode(party) {
-    // Remove active class from all nav items first
+    // Clear all nav active states first
     document.querySelectorAll('.col-nav .nav-item').forEach(el => el.classList.remove('active'));
     
-    // Only add active class if this is an existing party (has a name)
-    if(party.name) {
+    // Only activate if this is an existing party (has a name)
+    if(party && party.name && party.name.trim() !== '') {
         const items = document.querySelectorAll('.col-nav .nav-item');
         items.forEach(el => {
             if(el.textContent.trim().includes(party.name)) {
@@ -379,6 +392,8 @@ function renderPartyMode(party) {
             }
         });
     }
+    // If it's a new party (empty name), no nav item should be active
+    
     currentPartyId = party.id;
     
     const container = document.getElementById('setupDynamicContent');
@@ -433,7 +448,7 @@ function renderCandidatesList(candidates) {
     return candidates.map((c, index) => `
         <div class="cand-card" style="margin-bottom:15px; padding:15px; background:white; border:1px solid #eee; border-radius:8px;">
             <div style="display:flex; gap:15px; align-items:center;">
-                <div style="width:120px; height:120px; background:#ddd; border-radius:50%; overflow:hidden; flex-shrink:0;">
+                <div style="width:50px; height:50px; background:#ddd; border-radius:50%; overflow:hidden; flex-shrink:0;">
                     ${c.photo_url ? `<img src="${c.photo_url}" style="width:100%; height:100%; object-fit:cover;">` : '<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:1.5em;">👤</div>'}
                 </div>
                 <div style="flex:1;">
@@ -550,9 +565,8 @@ async function deleteParty(partyId, partyName) {
 }
 
 function resetPartyForm() {
-    // Remove active class from ALL nav items (including Global Settings)
+    // Clear all navigation active states when creating a new party
     document.querySelectorAll('.col-nav .nav-item').forEach(el => el.classList.remove('active'));
-    currentPartyId = null;
     
     renderPartyMode({
         name: '',
@@ -607,6 +621,187 @@ async function deletePosition(id) {
         renderSettingsMode();
     } catch(e) {
         alert('Error deleting position: ' + e.message);
+    }
+}
+
+// ==========================================
+// POSITION REORDERING (Drag & Drop)
+// ==========================================
+let draggedElement = null;
+
+function initializePositionDragAndDrop() {
+    const container = document.getElementById('settingsPosList');
+    if(!container) return;
+    
+    const items = container.querySelectorAll('.position-item');
+    
+    items.forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragover', handleDragOver);
+        item.addEventListener('drop', handleDrop);
+        item.addEventListener('dragenter', handleDragEnter);
+        item.addEventListener('dragleave', handleDragLeave);
+        item.addEventListener('dragend', handleDragEnd);
+    });
+}
+
+function handleDragStart(e) {
+    draggedElement = this;
+    this.style.opacity = '0.5';
+    this.style.transform = 'scale(0.98)';
+    this.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.innerHTML);
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDragEnter(e) {
+    if (this !== draggedElement) {
+        this.style.background = 'linear-gradient(135deg, #fff8e1 0%, #ffe0b2 100%)';
+        this.style.borderColor = '#d4a017';
+        this.style.borderWidth = '2px';
+        this.style.transform = 'translateY(-2px)';
+    }
+}
+
+function handleDragLeave(e) {
+    this.style.background = '#fafafa';
+    this.style.borderColor = '#eee';
+    this.style.borderWidth = '1px';
+    this.style.transform = 'translateY(0)';
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+    
+    if (draggedElement !== this) {
+        // Get the container
+        const container = document.getElementById('settingsPosList');
+        const allItems = Array.from(container.querySelectorAll('.position-item'));
+        
+        // Find positions
+        const draggedIndex = allItems.indexOf(draggedElement);
+        const targetIndex = allItems.indexOf(this);
+        
+        // Reorder in DOM
+        if (draggedIndex < targetIndex) {
+            this.parentNode.insertBefore(draggedElement, this.nextSibling);
+        } else {
+            this.parentNode.insertBefore(draggedElement, this);
+        }
+        
+        // Update positions array order
+        const movedItem = positions.splice(draggedIndex, 1)[0];
+        positions.splice(targetIndex, 0, movedItem);
+        
+        // Save new order to backend
+        savePositionOrder();
+    }
+    
+    return false;
+}
+
+function handleDragEnd(e) {
+    this.style.opacity = '1';
+    this.style.transform = 'scale(1)';
+    this.style.boxShadow = 'none';
+    
+    // Reset all items
+    const items = document.querySelectorAll('.position-item');
+    items.forEach(item => {
+        item.style.background = '#fafafa';
+        item.style.borderColor = '#eee';
+        item.style.borderWidth = '1px';
+        item.style.transform = 'translateY(0)';
+    });
+}
+
+async function movePositionUp(index) {
+    if (index <= 0) return;
+    
+    // Swap positions in the array
+    const temp = positions[index];
+    positions[index] = positions[index - 1];
+    positions[index - 1] = temp;
+    
+    // Save to backend and refresh display
+    await savePositionOrder();
+    renderSettingsMode();
+}
+
+async function movePositionDown(index) {
+    if (index >= positions.length - 1) return;
+    
+    // Swap positions in the array
+    const temp = positions[index];
+    positions[index] = positions[index + 1];
+    positions[index + 1] = temp;
+    
+    // Save to backend and refresh display
+    await savePositionOrder();
+    renderSettingsMode();
+}
+
+async function savePositionOrder() {
+    // Create an array of position IDs in their new order
+    const newOrder = positions.map(p => p.id);
+    
+    try {
+        const response = await fetch('api/manage_positions.php?action=reorder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ order: newOrder })
+        });
+        
+        const result = await response.json();
+        
+        if(result.success) {
+            // Update the display to show new order numbers
+            const container = document.getElementById('settingsPosList');
+            const items = container.querySelectorAll('.position-item');
+            items.forEach((item, index) => {
+                const orderSpan = item.querySelector('span[style*="color:#999"]');
+                if(orderSpan && orderSpan.textContent.includes('Order:')) {
+                    orderSpan.textContent = `(Order: ${index + 1})`;
+                }
+                item.dataset.order = index;
+            });
+            
+            // Show success message briefly
+            const container2 = document.getElementById('settingsPosList');
+            const existingMsg = container2.parentElement.querySelector('.reorder-success-msg');
+            if(existingMsg) existingMsg.remove();
+            
+            const successMsg = document.createElement('p');
+            successMsg.className = 'reorder-success-msg';
+            successMsg.style.cssText = 'color:#4caf50; font-size:0.9em; margin-top:10px; font-weight:600;';
+            successMsg.textContent = '✓ Position order saved successfully!';
+            container2.parentElement.appendChild(successMsg);
+            
+            setTimeout(() => successMsg.remove(), 3000);
+        } else {
+            alert('Failed to save position order: ' + (result.message || 'Unknown error'));
+            // Reload to reset order
+            await loadPositions();
+            renderSettingsMode();
+        }
+    } catch(e) {
+        console.error('Error saving position order:', e);
+        alert('Error saving position order. Please try again.');
+        // Reload to reset order
+        await loadPositions();
+        renderSettingsMode();
     }
 }
 
