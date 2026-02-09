@@ -1,23 +1,49 @@
 <?php
+// api/get_ballot.php
+// This file provides the voting ballot data to the voter interface
+// NOW UPDATED: Respects the priority order set in the admin panel
+
 require '../db.php';
 header('Content-Type: application/json');
 
-// 1. Fetch Positions
-$stmt = $pdo->query("SELECT * FROM positions ORDER BY id ASC");
-$positions = $stmt->fetchAll();
-
-$response = ['positionNames' => [], 'candidates' => []];
-
-foreach ($positions as $pos) {
-    // We use the ID as the key (e.g., "pos_1")
-    $key = 'pos_' . $pos['id'];
-    $response['positionNames'][$key] = $pos['title'];
+try {
+    // Fetch all positions ordered by priority (set in admin panel)
+    $stmt = $pdo->query("SELECT * FROM positions ORDER BY priority ASC, id ASC");
+    $positions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Fetch candidates for this position
-    $stmtC = $pdo->prepare("SELECT id, full_name as name, photo_url as img, (SELECT name FROM parties WHERE id = candidates.party_id) as party FROM candidates WHERE position_id = ?");
-    $stmtC->execute([$pos['id']]);
-    $response['candidates'][$key] = $stmtC->fetchAll();
+    $positionNames = [];
+    $candidates = [];
+    
+    foreach ($positions as $pos) {
+        $key = "pos_" . $pos['id'];
+        $positionNames[$key] = $pos['title'];
+        
+        // Fetch candidates for this position with party info
+        $stmt = $pdo->prepare("
+            SELECT 
+                c.id, 
+                c.full_name as name, 
+                c.photo_url as img,
+                p.name as party,
+                p.color as party_color
+            FROM candidates c
+            LEFT JOIN parties p ON c.party_id = p.id
+            WHERE c.position_id = ?
+            ORDER BY c.id ASC
+        ");
+        $stmt->execute([$pos['id']]);
+        $candidates[$key] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    echo json_encode([
+        'positionNames' => $positionNames,
+        'candidates' => $candidates
+    ]);
+    
+} catch (Exception $e) {
+    echo json_encode([
+        'error' => true,
+        'message' => 'Failed to load ballot data: ' . $e->getMessage()
+    ]);
 }
-
-echo json_encode($response);
 ?>

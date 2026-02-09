@@ -641,3 +641,157 @@ tr:last-child td {
 
 .w-full { width: 100%; }
 .h-full { height: 100%; }
+
+/* ========================================
+   POSITION REORDERING STYLES
+   ======================================== */
+
+/* Position Item Container */
+.position-item {
+    padding: 12px;
+    border: 1px solid var(--border-light);
+    margin-bottom: 8px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fafafa;
+    cursor: move;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.position-item:hover {
+    background: var(--hover-bg);
+    border-color: var(--border-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Drag Handle */
+.position-item [style*="cursor:grab"],
+.position-item [style*="cursor:move"] {
+    cursor: grab !important;
+    color: var(--text-light);
+    transition: color 0.3s ease;
+}
+
+.position-item:hover [style*="cursor:grab"],
+.position-item:hover [style*="cursor:move"] {
+    color: var(--primary-color);
+}
+
+.position-item:active {
+    cursor: grabbing !important;
+}
+
+/* Dragging State */
+.position-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Drop Target State */
+.position-item.drag-over {
+    background: linear-gradient(135deg, #fff8e1 0%, #ffe0b2 100%);
+    border-color: var(--primary-color);
+    border-width: 2px;
+    transform: translateY(-2px);
+}
+
+/* Arrow Buttons */
+.position-item button {
+    background: none;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.position-item button:hover:not(:disabled) {
+    background: var(--primary-color);
+    color: white;
+    transform: scale(1.05);
+}
+
+.position-item button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    border-color: var(--text-light);
+    color: var(--text-light);
+}
+
+.position-item button:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+/* Position Order Number */
+.position-item span[style*="color:#999"] {
+    transition: color 0.3s ease;
+}
+
+.position-item:hover span[style*="color:#999"] {
+    color: var(--primary-dark) !important;
+}
+
+/* Delete Button (X) */
+.position-item span[onclick*="deletePosition"] {
+    color: #e74c3c;
+    cursor: pointer;
+    font-size: 1.5em;
+    line-height: 1;
+    padding: 5px;
+    margin-left: 5px;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+}
+
+.position-item span[onclick*="deletePosition"]:hover {
+    background: #fee;
+    color: #c0392b;
+    transform: scale(1.2);
+}
+
+/* Success Message for Reordering */
+.reorder-success-msg {
+    color: var(--success-color);
+    font-size: 0.9em;
+    margin-top: 10px;
+    font-weight: 600;
+    padding: 10px;
+    background: #d4edda;
+    border-radius: 6px;
+    border-left: 4px solid var(--success-color);
+    animation: fadeIn 0.3s ease;
+}
+
+/* Position List Container */
+#settingsPosList {
+    max-height: 450px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+/* Scrollbar for Position List */
+#settingsPosList::-webkit-scrollbar {
+    width: 8px;
+}
+
+#settingsPosList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+#settingsPosList::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 10px;
+}
+
+#settingsPosList::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
+}

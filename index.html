@@ -69,6 +69,13 @@
                 <h2 class="position-title" id="displayPositionTitle"></h2>
                 <p class="position-subtitle" id="displayPositionSubtitle"></p>
                 <div class="candidates-grid" id="candidatesGrid"></div>
+                
+                <!-- ADDED: Abstain button -->
+                <div class="abstain-button" id="abstainBtn" onclick="selectAbstain()">
+                    <span class="abstain-icon">⊘</span>
+                    <span>Abstain from this vote</span>
+                </div>
+                
                 <div class="navigation">
                     <button class="btn btn-secondary" id="prevBtn" onclick="handlePrevious()">← Back</button>
                     <button class="btn btn-primary" id="nextBtn" onclick="handleNext()" disabled>Next →</button>
