@@ -1,4 +1,4 @@
--- Fixed Database Schema with PIN Authentication
+-- Fixed Database Schema with Images
 -- database.sql
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -8,7 +8,7 @@ SET time_zone = "+08:00";
 CREATE DATABASE IF NOT EXISTS voting_system;
 USE voting_system;
 
--- 1. Settings Table (Stores global configuration)
+-- 1. Settings Table
 CREATE TABLE IF NOT EXISTS settings (
     setting_key VARCHAR(50) PRIMARY KEY,
     setting_value VARCHAR(255)
@@ -20,7 +20,7 @@ INSERT INTO settings (setting_key, setting_value) VALUES
 ('pin_updated_date', CURDATE())
 ON DUPLICATE KEY UPDATE setting_key=setting_key;
 
--- 2. Sessions Table (For PIN-based authentication)
+-- 2. Sessions Table
 CREATE TABLE IF NOT EXISTS sessions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     session_token VARCHAR(64) UNIQUE NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     INDEX idx_expires (expires_at)
 );
 
--- 3. Positions Table (Dynamic positions with priority ordering)
+-- 3. Positions Table
 CREATE TABLE IF NOT EXISTS positions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(100) NOT NULL,
@@ -41,17 +41,18 @@ CREATE TABLE IF NOT EXISTS positions (
     priority INT DEFAULT 99
 );
 
--- Insert sample positions
 INSERT INTO positions (id, title, priority) VALUES 
 (1, 'President', 1),
 (2, 'Vice President', 2),
 (3, 'Secretary', 3),
 (4, 'Treasurer', 4),
-(5, 'Grade 11 Representative', 5),
-(6, 'Grade 12 Representative', 6)
+(5, 'Auditor', 5),
+(6, 'Protocol Officer', 6),
+(7, 'PIO', 7),
+(8, 'Grade 12 Representative', 8)
 ON DUPLICATE KEY UPDATE title=VALUES(title);
 
--- 4. Parties Table (With logo, slogan, color)
+-- 4. Parties Table
 CREATE TABLE IF NOT EXISTS parties (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -60,10 +61,9 @@ CREATE TABLE IF NOT EXISTS parties (
     logo_url VARCHAR(255) DEFAULT NULL
 );
 
--- Insert sample parties
 INSERT INTO parties (id, name, slogan, color, logo_url) VALUES 
 (1, 'SINAG', 'Lighting the Path Forward', '#f1c40f', NULL),
-(2, 'IGNITE', 'Spark the Change', '#e74c3c', NULL),
+(2, 'IGNITE', 'Spark the Change', '#e74c3c', 'assets/candidates/Ignite/GROUP PHOTO.png'),
 (3, 'Independent', 'Voice of the People', '#95a5a6', NULL)
 ON DUPLICATE KEY UPDATE name=VALUES(name);
 
@@ -78,31 +78,32 @@ CREATE TABLE IF NOT EXISTS candidates (
     FOREIGN KEY (party_id) REFERENCES parties(id) ON DELETE CASCADE
 );
 
--- Insert sample candidates
+-- Insert Candidates with EXACT filenames from your latest screenshot
 INSERT INTO candidates (position_id, party_id, full_name, photo_url) VALUES 
--- President
-(1, 1, 'Juan Dela Cruz', 'assets/candidates/Sample1.jpg'),
-(1, 2, 'Maria Santos', 'assets/candidates/Sample2.jpg'),
-(1, 3, 'Pedro Reyes', 'assets/candidates/Sample3.jpg'),
--- Vice President
-(2, 1, 'Ana Garcia', 'assets/candidates/Sample4.jpg'),
-(2, 2, 'Carlos Mendoza', NULL),
--- Secretary
-(3, 1, 'Lisa Fernandez', NULL),
-(3, 2, 'Miguel Torres', NULL),
--- Treasurer
-(4, 1, 'Sofia Rodriguez', NULL),
-(4, 2, 'Diego Martinez', NULL),
--- Grade 11 Rep
-(5, 1, 'Elena Cruz', NULL),
-(5, 2, 'Ramon Aquino', NULL),
-(5, 3, 'Isabel Ramos', NULL),
--- Grade 12 Rep
-(6, 1, 'Gabriel Santos', NULL),
-(6, 2, 'Carmen Valdez', NULL)
-ON DUPLICATE KEY UPDATE full_name=VALUES(full_name);
 
--- 6. Voters Table (For tracking unique voters)
+-- === SINAG PARTY (Party ID 1) ===
+(1, 1, 'Charles Arwin O. Garcia',  'assets/candidates/Sinag/Charles Arwin Garcia.png'),
+(3, 1, 'Princess Elvie F. David',  'assets/candidates/Sinag/Princess Elvie David.jpg'),
+(4, 1, 'Marievill R. Delos Reyes', 'assets/candidates/Sinag/Marievill Delos Reyes.jpeg'),
+(5, 1, 'Louisa Anne B. Rivera',    'assets/candidates/Sinag/Louisa Anne Rivera.jpg'),
+(7, 1, 'Jhaycelyn Delos Angeles',  'assets/candidates/Sinag/Jhaycelyn Delos Angeles.jpg'),
+(6, 1, 'Jhamina Castro',           'assets/candidates/Sinag/Jhamina Castro.jpg'),
+(8, 1, 'Santina M. Facistol',      'assets/candidates/Sinag/Santina M. Facistol.png'),
+
+-- === IGNITE PARTY (Party ID 2) ===
+(1, 2, 'Symon D. Bandivas',           'assets/candidates/Ignite/Symon D. Bandivas (President).png'),
+(2, 2, 'Sharpaigne B. Delos Reyes',   'assets/candidates/Ignite/Sharpaigne B. Delos Reyes(Vice President).jpg'),
+(3, 2, 'Sofia Allyson A. Oba',        'assets/candidates/Ignite/Sofia Allyson A. Oba (SECRETARY).jpg'),
+(5, 2, 'Lyanna Mickael I. Delequeña', 'assets/candidates/Ignite/Lyanna Mickael I. Delequeña(Auditor).jpg'),
+(6, 2, 'Paul Anthony H. Maluya',      'assets/candidates/Ignite/Paul Anthony H. Maluya (P.O).jpeg'),
+(8, 2, 'Khristine H. Borja',          'assets/candidates/Ignite/Khristine H. Borja( GRADE 12 REPRESENTATIVE).png'),
+
+-- === INDEPENDENT (Party ID 3) ===
+(2, 3, 'Keisha Eunizce G. Atchico', 'assets/candidates/independent/Keisha.jpg')
+
+ON DUPLICATE KEY UPDATE full_name=VALUES(full_name), photo_url=VALUES(photo_url);
+
+-- 6. Voters Table
 CREATE TABLE IF NOT EXISTS voters (
     id INT AUTO_INCREMENT PRIMARY KEY,
     voter_code VARCHAR(50) NOT NULL UNIQUE,
@@ -119,11 +120,10 @@ CREATE TABLE IF NOT EXISTS votes (
     FOREIGN KEY (voter_id) REFERENCES voters(id) ON DELETE CASCADE,
     FOREIGN KEY (position_id) REFERENCES positions(id) ON DELETE CASCADE,
     FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE,
-    -- Constraint: One vote per position per voter
     UNIQUE KEY unique_vote (voter_id, position_id)
 );
 
--- 8. Cleanup old sessions (runs on database initialization)
+-- 8. Cleanup old sessions
 DELETE FROM sessions WHERE expires_at < NOW();
 
 COMMIT;

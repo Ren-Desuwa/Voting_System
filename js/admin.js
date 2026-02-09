@@ -180,26 +180,43 @@ async function renderSettingsMode() {
     initializePositionDragAndDrop();
 }
 
-
-function loadTailscaleUrl() {
-    // 1. PASTE YOUR PERMANENT URL HERE
-    const myRealUrl = "https://czshs-vote.tail97fe4a.ts.net"; 
-
+async function loadTailscaleUrl() {
     const urlDisplay = document.getElementById('tailscaleUrlDisplay');
     const statusDisplay = document.getElementById('tailscaleStatus');
     const copyBtn = document.getElementById('copyUrlBtn');
 
-    if (urlDisplay) {
-        // Force the display to show your URL
-        urlDisplay.innerHTML = `<strong>${myRealUrl}</strong>`;
-        
-        // Update the status text to look "Good"
-        statusDisplay.innerHTML = `✅ System Online | URL Configured Manually`;
-        statusDisplay.style.color = "#d1fae5"; // Light green text
-        
-        // Enable the copy button
-        copyBtn.disabled = false;
-        window.tailscaleUrl = myRealUrl; 
+    // 1. Show Loading State
+    if (urlDisplay) urlDisplay.innerHTML = '<span style="opacity: 0.7;">Fetching URL...</span>';
+
+    try {
+        // 2. Fetch the dynamic info from our PHP script
+        // Add timestamp to prevent browser caching
+        const res = await fetch('api/get_tailscale_info.php?t=' + new Date().getTime());
+        const data = await res.json();
+
+        if (data.success && data.url) {
+            // SUCCESS: We found the real dynamic URL
+            urlDisplay.innerHTML = `<strong>${data.url}</strong>`;
+            
+            statusDisplay.innerHTML = `✅ ${data.message}`; // "Online: https://..."
+            statusDisplay.style.color = "#d1fae5"; // Light green text
+            
+            // Enable the copy button and save the URL globally
+            copyBtn.disabled = false;
+            window.tailscaleUrl = data.url; 
+        } else {
+            // FAILURE: File not found or Tailscale not running
+            urlDisplay.innerHTML = `<span style="opacity: 0.7;">URL Unavailable</span>`;
+            statusDisplay.innerHTML = `⚠️ ${data.message || 'Run "Refresh Status" command'}`;
+            statusDisplay.style.color = "#fca5a5"; // Light red text
+            copyBtn.disabled = true;
+        }
+
+    } catch (e) {
+        // ERROR: Network or JSON parse error
+        console.error("Tailscale check failed:", e);
+        if (urlDisplay) urlDisplay.innerHTML = '<span style="color: #fca5a5;">Connection Error</span>';
+        if (statusDisplay) statusDisplay.innerHTML = '❌ Server API not responding';
     }
 }
 
