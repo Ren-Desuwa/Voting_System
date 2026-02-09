@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Control Suite</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="admin-body">
+
+<div class="header-title">
+    <h1>Admin Control Suite</h1>
+    <a href="index.html" class="back-link">← Back to Voting Kiosk</a>
+</div>
+
+<div class="main-container">
+    
+    <div class="top-nav">
+        <div class="nav-tab active" onclick="switchMainTab('setup')">Candidates & Setup</div>
+        <div class="nav-tab" onclick="switchMainTab('analytics')">Votes & Dashboard</div>
+    </div>
+
+    <div id="setupView" class="panel-content active" style="display: grid; grid-template-columns: 240px 1fr 1fr; height: 100%;">
+        
+        <div class="col-nav">
+            <div class="nav-item" id="nav-global" onclick="renderSettingsMode()">
+                ⚙️ Global Settings
+            </div>
+            
+            <div class="separator-text">PARTIES</div>
+            <div id="partyListNav">
+                </div>
+            
+            <button class="btn-new-party" onclick="resetPartyForm()">+ New Party</button>
+        </div>
+
+        <div id="setupDynamicContent" style="display: contents;">
+        </div>
+
+    </div>
+
+    <div id="analyticsView" class="panel-content" style="display: none; grid-template-columns: 280px 1fr; height: 100%;">
+        
+        <div class="col-nav" style="border-right: 1px solid #eee;">
+            <div class="nav-item" onclick="renderMainDashboard()">
+                📊 Overview
+            </div>
+            <div class="separator-text">POSITIONS</div>
+            <div id="analyticsPosList">
+                </div>
+        </div>
+
+        <div id="analyticsMain" class="col-content" style="background: #f9f9f9;">
+            </div>
+
+    </div>
+
+</div>
+
+<script src="js/admin.js"></script>
+</body>
+</html>

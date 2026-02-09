@@ -1,76 +1,67 @@
+// js/script.js
+// 1. DYNAMIC DATA CONTAINERS
+let positionNames = {};
+let candidates = {};
+let positionKeys = []; // ["pos_1", "pos_2", etc.]
+let votes = {};        // Stores the user's choices: { "pos_1": 2, "pos_2": 0 }
+let currentStep = 0;   // 0 = Home, 1+ = Voting
 
+// 2. INITIALIZATION
+document.addEventListener('DOMContentLoaded', () => {
+    loadBallot(); // Fetch data immediately in the background
+});
 
-// 1. DATA CONFIGURATION
-const positionNames = {
-    g11: "Grade 11 Representative",
-    g12: "Grade 12 Representative",
-    treasurer: "Treasurer",
-    secretary: "Secretary",
-    vp: "Vice President",
-    president: "President"
-};
+// 3. FETCH DATA FROM SERVER
+async function loadBallot() {
+    try {
+        console.log("Fetching election data...");
+        const res = await fetch('api/get_ballot.php');
+        const data = await res.json();
 
-const candidates = {
-    g11: [
-        { name: "Juan Dela Cruz", party: "Team Payaman", img: "img/juan.jpg" }, 
-        { name: "Maria Clara", party: "Team Bakulaw", img: "img/maria.jpg" },
-        { name: "Angelo Reyes", party: "Team Agila", img: "img/angelo.jpg" },
-        { name: "Sofia Santos", party: "Team Tigre", img: "img/sofia.jpg" }
-    ],
-    g12: [
-        { name: "Jose Rizal", party: "Team HotDog", img: "img/jose.jpg" }, 
-        { name: "Andres Bonifacio", party: "Geng Geng", img: "img/andres.jpg" },
-        { name: "Emilio Aguinaldo", party: "Team Agila", img: "img/emilio.jpg" },
-        { name: "Apolinario Mabini", party: "Team Tigre", img: "img/apolinario.jpg" }
-    ],
-    treasurer: [
-        { name: "Robert Martinez", party: "Team Payaman", img: "img/robert.jpg" }, 
-        { name: "Jennifer Lee", party: "Team Bakulaw", img: "img/jennifer.jpg" },
-        { name: "Ricardo Dalisay", party: "Team Agila", img: "img/ricardo.jpg" },
-        { name: "Liza Soberano", party: "Team Tigre", img: "img/liza.jpg" }
-    ],
-    secretary: [
-        { name: "Emily Rodriguez", party: "Team Payaman", img: "img/emily.jpg" }, 
-        { name: "David Wilson", party: "Team Bakulaw", img: "img/david.jpg" },
-        { name: "Bea Alonzo", party: "Team Agila", img: "img/bea.jpg" },
-        { name: "John Lloyd Cruz", party: "Team Tigre", img: "img/john.jpg" }
-    ],
-    vp: [
-        { name: "Amanda Taylor", party: "Team Payaman", img: "img/amanda.jpg" }, 
-        { name: "Christopher Davis", party: "Team Bakulaw", img: "img/christopher.jpg" },
-        { name: "Dingdong Dantes", party: "Team Agila", img: "img/dingdong.jpg" },
-        { name: "Marian Rivera", party: "Team Tigre", img: "img/marian.jpg" }
-    ],
-    president: [
-        { name: "James Thompson", party: "Team Payaman", img: "img/james.jpg" }, 
-        { name: "Margaret Williams", party: "Team Bakulaw", img: "img/margaret.jpg" },
-        { name: "Vic Sotto", party: "Team Agila", img: "img/vic.jpg" },
-        { name: "Joey De Leon", party: "Team Tigre", img: "img/joey.jpg" }
-    ]
-};
+        // Save data to global variables
+        positionNames = data.positionNames;
+        candidates = data.candidates;
+        positionKeys = Object.keys(positionNames);
+        
+        // Initialize votes object with nulls
+        votes = {};
+        positionKeys.forEach(key => votes[key] = null);
+        
+        console.log("Ballot loaded successfully:", positionNames);
+    } catch (e) {
+        console.error("Failed to load ballot:", e);
+        alert("Error connecting to server. Please ensure the database is running.");
+    }
+}
 
-// 2. STATE MANAGEMENT
-let currentStep = 0; // 0 = Home, 1 to N = Voting, N+1 = Summary
-const positionKeys = Object.keys(positionNames);
-const totalVotingSteps = positionKeys.length;
-const votes = {}; 
-
-// Initialize votes object with nulls
-positionKeys.forEach(key => votes[key] = null);
-
-// 3. CORE FUNCTIONS
+// 4. CORE NAVIGATION FUNCTIONS
 function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(pageId).classList.add('active');
 }
 
 function startVoting() {
+    // Check if data is loaded
+    if (positionKeys.length === 0) {
+        alert("Election data is still loading... please try again in a few seconds.");
+        loadBallot(); // Retry loading
+        return;
+    }
+    
+    // Reset selections for the new voter
+    positionKeys.forEach(key => votes[key] = null);
+    
+    // Start at Step 1
     currentStep = 1;
-    // Shuffle candidates for every position once before starting
-    Object.keys(candidates).forEach(key => {
-        shuffleArray(candidates[key]);
-    });
     document.getElementById('votingUI').style.display = 'block';
+    
+    // Shuffle candidates once per voter session (Optional fairness)
+    positionKeys.forEach(key => {
+        if(candidates[key]) {
+            shuffleArray(candidates[key]);
+        }
+    });
+
     showVotingPage();
 }
 
@@ -80,7 +71,7 @@ function showVotingPage() {
     updateUI();
 }
 
-// Helper function to shuffle an array
+// Helper: Shuffle Array (Fisher-Yates)
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -89,42 +80,63 @@ function shuffleArray(array) {
     return array;
 }
 
+// 5. RENDER UI
 function renderCandidates() {
-    const key = positionKeys[currentStep - 1];
+    const key = positionKeys[currentStep - 1]; // e.g., "pos_1"
     const grid = document.getElementById('candidatesGrid');
     
+    // Update Header
     document.getElementById('displayPositionTitle').innerText = positionNames[key];
     document.getElementById('displayPositionSubtitle').innerText = `Select one candidate for ${positionNames[key]}`;
     
     grid.innerHTML = '';
     
-    candidates[key].forEach((candidate, index) => {
-        const isSelected = votes[key] === index ? 'selected' : '';
-        const card = document.createElement('div');
-        card.className = `candidate-card ${isSelected}`;
-        card.onclick = () => selectCandidate(index, key);
+    // Create Cards
+    if (candidates[key]) {
+        candidates[key].forEach((candidate, index) => {
+            const isSelected = votes[key] === index ? 'selected' : '';
+            const card = document.createElement('div');
+            card.className = `candidate-card ${isSelected}`;
+            card.onclick = () => selectCandidate(index, key);
 
-        // Check if candidate has an image; otherwise, use the emoji placeholder
-        const photoContent = candidate.img 
-            ? `<img src="${candidate.img}" alt="${candidate.name}" onerror="this.style.display='none';">👤`
-            : `👤`;
+            // Handle Image (Use placeholder if empty)
+            const photoContent = candidate.img 
+                ? `<img src="${candidate.img}" alt="${candidate.name}" onerror="this.onerror=null;this.src='assets/CZSHS_logo.png';">`
+                : `👤`;
 
-        card.innerHTML = `
-            <div class="candidate-photo">
-                ${photoContent}
-            </div>
-            <div class="candidate-info">
-                <div class="candidate-name">${candidate.name}</div>
-                <div class="candidate-party">${candidate.party}</div>
-            </div>
-            <div class="candidate-radio"></div>
-        `;
-        grid.appendChild(card);
-    });
+            card.innerHTML = `
+                <div class="candidate-photo">
+                    ${photoContent}
+                </div>
+                <div class="candidate-info">
+                    <div class="candidate-name">${candidate.name}</div>
+                    <div class="candidate-party">${candidate.party || 'Independent'}</div>
+                </div>
+                <div class="candidate-radio"></div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+    
+    // ADDED: Update abstain button state
+    const abstainBtn = document.getElementById('abstainBtn');
+    if (abstainBtn) {
+        if (votes[key] === 'abstain') {
+            abstainBtn.classList.add('selected');
+        } else {
+            abstainBtn.classList.remove('selected');
+        }
+    }
 }
 
 function selectCandidate(index, key) {
     votes[key] = index;
+    
+    // MODIFIED: Remove abstain selection when a candidate is selected
+    const abstainBtn = document.getElementById('abstainBtn');
+    if (abstainBtn) {
+        abstainBtn.classList.remove('selected');
+    }
     
     // Find all cards in the grid
     const cards = document.querySelectorAll('.candidate-card');
@@ -141,31 +153,48 @@ function selectCandidate(index, key) {
     updateUI(); 
 }
 
+// ADDED: Function to handle abstain selection
+function selectAbstain() {
+    const currentKey = positionKeys[currentStep - 1];
+    
+    // Set vote to special value 'abstain'
+    votes[currentKey] = 'abstain';
+    
+    // Remove selection from all candidate cards
+    const cards = document.querySelectorAll('.candidate-card');
+    cards.forEach(card => card.classList.remove('selected'));
+    
+    // Highlight abstain button
+    const abstainBtn = document.getElementById('abstainBtn');
+    abstainBtn.classList.add('selected');
+    
+    updateUI();
+}
+
 function updateUI() {
     const currentKey = positionKeys[currentStep - 1];
     const nextBtn = document.getElementById('nextBtn');
     
-    // Check if the current position has a selection
-    // Using !== null is safer than if(votes[currentKey]) because index 0 is "falsy"
+    // MODIFIED: Enable "Next" if a selection is made OR abstain is selected
     if (votes[currentKey] !== null) {
         nextBtn.disabled = false;
     } else {
         nextBtn.disabled = true;
     }
 
-    // Dynamic Page Numbering
-    document.getElementById('pageIndicator').innerText = `Step ${currentStep} of ${totalVotingSteps}`;
-    
-    // Dynamic Progress Bar
-    const progress = (currentStep / (totalVotingSteps + 1)) * 100;
+    // Progress Bar & Page Numbers
+    const totalSteps = positionKeys.length;
+    document.getElementById('pageIndicator').innerText = `Step ${currentStep} of ${totalSteps}`;
+    const progress = (currentStep / (totalSteps + 1)) * 100;
     document.getElementById('progressFill').style.width = `${progress}%`;
 
-    // Dynamic Button Labels
-    nextBtn.innerText = currentStep === totalVotingSteps ? "Review Votes →" : "Next →";
+    // Button Text (Last step says "Review")
+    nextBtn.innerText = currentStep === totalSteps ? "Review Votes →" : "Next →";
 }
 
 function handleNext() {
-    if (currentStep < totalVotingSteps) {
+    const totalSteps = positionKeys.length;
+    if (currentStep < totalSteps) {
         currentStep++;
         showVotingPage();
     } else {
@@ -178,7 +207,10 @@ function handlePrevious() {
         currentStep--;
         showVotingPage();
     } else {
-        location.reload();
+        // Confirm before quitting
+        if(confirm("Cancel voting and return to home screen?")) {
+            location.reload();
+        }
     }
 }
 
@@ -187,100 +219,92 @@ function showSummary() {
     content.innerHTML = '';
     
     positionKeys.forEach(key => {
-        const candidate = candidates[key][votes[key]];
-        const item = document.createElement('div');
-        item.className = 'summary-item';
-        item.innerHTML = `
-            <div class="summary-position">${positionNames[key]}</div>
-            <div class="summary-candidate">${candidate.name}</div>
-            <div class="summary-party">${candidate.party}</div>
-        `;
-        content.appendChild(item);
+        const selection = votes[key];
+        
+        // MODIFIED: Handle abstain votes
+        if (selection === 'abstain') {
+            const item = document.createElement('div');
+            item.className = 'summary-item';
+            item.innerHTML = `
+                <div class="summary-position">${positionNames[key]}</div>
+                <div class="summary-candidate-photo">
+                    ⊘
+                </div>
+                <div class="summary-candidate">Abstained</div>
+                <div class="summary-party">No vote cast for this position</div>
+            `;
+            content.appendChild(item);
+        } else {
+            const candidate = candidates[key][selection];
+            
+            // Handle Image (Use placeholder if empty)
+            const photoContent = candidate.img 
+                ? `<img src="${candidate.img}" alt="${candidate.name}" onerror="this.onerror=null;this.src='assets/CZSHS_logo.png';">`
+                : `👤`;
+            
+            const item = document.createElement('div');
+            item.className = 'summary-item';
+            item.innerHTML = `
+                <div class="summary-position">${positionNames[key]}</div>
+                <div class="summary-candidate-photo">
+                    ${photoContent}
+                </div>
+                <div class="summary-candidate">${candidate.name}</div>
+                <div class="summary-party">${candidate.party || 'Independent'}</div>
+            `;
+            content.appendChild(item);
+        }
     });
 
-    const progress = 100;
-    document.getElementById('progressFill').style.width = `${progress}%`;
+    document.getElementById('progressFill').style.width = `100%`;
     showPage('pageSummary');
 }
 
-function submitVote() {
-    document.getElementById('votingUI').style.display = 'none';
-    showPage('pageSuccess');
-    console.log("Final Votes:", votes);
-}
+// 6. SUBMIT TO SERVER
+async function submitVote() {
+    const submitBtn = document.querySelector('#pageSummary .btn-primary');
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Submitting...";
 
-        /* ==================================================================
-FUTURE PHP DATABASE INTEGRATION (PLACEHOLDERS)
-==================================================================
-The functions below are designed to work with a PHP backend.
-Uncomment these when you are ready to move from localStorage 
-to a real SQL database.
-*/
-
-/**
- * Sends a single vote to a PHP script (e.g., submit_vote.php)
- * @param {Object} userVotes - The current 'votes' object containing selections
- */
-/*
-async function submitToDatabase(userVotes) {
-    try {
-        const response = await fetch('api/submit_vote.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(userVotes)
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-            console.log("Database updated successfully");
-        } else {
-            console.error("Database error:", result.message);
+    // MODIFIED: Prepare payload handling abstain votes
+    const payload = {};
+    positionKeys.forEach(key => {
+        const selection = votes[key];
+        if (selection === 'abstain') {
+            // Send 'abstain' as a special value to the server
+            payload[key] = 'abstain';
+        } else if (selection !== null) {
+            // Get the actual Database ID from the candidate object
+            payload[key] = candidates[key][selection].id;
         }
-    } catch (error) {
-        console.error("Network error:", error);
-    }
-}
-*/
-
-/**
- * Fetches real-time statistics from a PHP script (e.g., get_results.php)
- */
-/*
-async function fetchStatisticsFromDB() {
-    try {
-        const response = await fetch('api/get_results.php');
-        const dbData = await response.json();
-        
-        // This would replace your local 'voteStorage' with real server data
-        voteStorage = dbData; 
-        displayStatistics();
-    } catch (error) {
-        console.error("Could not fetch database stats:", error);
-    }
-}
-*/
-
-/**
- * Securely verifies admin credentials via backend PHP
- */
-/*
-async function verifyAdminWithDB(username, password) {
-    const formData = new FormData();
-    formData.append('username', username);
-    formData.append('password', password);
+    });
 
     try {
-        const response = await fetch('api/admin_login.php', {
+        const res = await fetch('api/submit_vote.php', {
             method: 'POST',
-            body: formData
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
         });
-        const status = await response.json();
-        return status.authorized; // Returns true or false
-    } catch (error) {
-        console.error("Auth error:", error);
-        return false;
+
+        const result = await res.json();
+        if(result.success) {
+            document.getElementById('votingUI').style.display = 'none';
+            showPage('pageSuccess');
+            
+            // AUTO-RESET after 3 seconds for the next voter
+            console.log("Resetting in 3 seconds...");
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        } else {
+            alert("Error submitting vote: " + result.message);
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Submit Vote ✓";
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Network Error. Please try again.");
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Submit Vote ✓";
     }
 }
-*/
