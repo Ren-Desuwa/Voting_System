@@ -1,4 +1,4 @@
-// Fixed admin.js - Fully functional admin panel with PIN management and ABSTAIN tracking
+// Fixed admin.js - Fully functional admin panel with PIN management
 let positions = [];
 let parties = [];
 let analyticsData = null;
@@ -133,235 +133,213 @@ async function renderSettingsMode() {
                 </div>
 
                 <!-- COLUMN 2: Position Manager -->
-                <div>
-                    <h3>Position Priority Order</h3>
-                    <p style="color:#666; font-size:0.9em; margin-bottom:15px;">Drag to reorder ballot positions</p>
-                    
-                    <div id="positionList" style="display:flex; flex-direction:column; gap:8px;">
-                        <!-- Will be populated via loadPositions() -->
+                <div style="border-left:1px solid #eee; padding-left:30px;">
+                    <h3>Position Manager</h3>
+                    <p style="color:#666; font-size:0.9em; margin-bottom:15px;">Add or remove voting positions</p>
+                    <div style="display: flex; gap: 10px; margin-bottom:20px;">
+                        <input type="text" id="newPosTitle" placeholder="e.g., President" style="flex:1;">
+                        <button type="button" onclick="addPosition()" style="background:#d4a017; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer;">Add</button>
                     </div>
-                    
-                    <div style="margin-top:20px; padding:15px; background:#f0f8ff; border-left:4px solid #3498db; border-radius:6px;">
-                        <strong style="color:#2980b9;">💡 Tip:</strong>
-                        <p style="margin:8px 0 0 0; color:#666; font-size:0.85em;">The order here determines how positions appear on the ballot. President is typically first.</p>
+                    <div id="settingsPosList" style="max-height:450px; overflow-y:auto;">
+                        ${positions.map((p, index) => `
+                            <div class="position-item" data-position-id="${p.id}" data-order="${index}" draggable="true" style="padding:12px; border:1px solid #eee; margin-bottom:8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; background:#fafafa; cursor:move; transition: all 0.3s;">
+                                <div style="display:flex; align-items:center; gap:10px; flex:1;">
+                                    <span style="color:#999; cursor:grab; font-size:1.2em;" title="Drag to reorder">⋮⋮</span>
+                                    <span style="font-weight:500;">${p.title}</span>
+                                    <span style="color:#999; font-size:0.85em;">(Order: ${index + 1})</span>
+                                </div>
+                                <div style="display:flex; gap:5px; align-items:center;">
+                                    <button onclick="movePositionUp(${index})" ${index === 0 ? 'disabled' : ''} style="background:none; border:1px solid #d4a017; color:#d4a017; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.9em;" title="Move up">▲</button>
+                                    <button onclick="movePositionDown(${index})" ${index === positions.length - 1 ? 'disabled' : ''} style="background:none; border:1px solid #d4a017; color:#d4a017; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.9em;" title="Move down">▼</button>
+                                    <span onclick="deletePosition(${p.id})" style="color:#e74c3c; cursor:pointer; font-size:1.5em; line-height:1; padding:5px; margin-left:5px;" title="Delete position">&times;</span>
+                                </div>
+                            </div>
+                        `).join('')}
                     </div>
+                    <p style="color:#999; font-size:0.85em; margin-top:10px;">💡 Drag positions or use ▲▼ buttons to reorder</p>
                 </div>
-
-                <!-- COLUMN 3: Data Management -->
-                <div>
-                    <h3>Data Management</h3>
-                    
-                    <button type="button" onclick="exportDatabase()" style="width:100%; padding:12px; background:#27ae60; color:white; border:none; border-radius:6px; cursor:pointer; margin-bottom:10px; margin-top:20px;">
-                        💾 Export Database
-                    </button>
-                    
-                    <button type="button" onclick="if(confirm('⚠️ WARNING: This will delete ALL votes!\\n\\nAre you absolutely sure?')) resetAllVotes()" style="width:100%; padding:12px; background:#e74c3c; color:white; border:none; border-radius:6px; cursor:pointer; margin-bottom:10px;">
-                        🗑️ Reset All Votes
-                    </button>
-                    
-                    <button type="button" onclick="if(confirm('⚠️ DANGER: This will delete EVERYTHING (parties, candidates, votes)!\\n\\nAre you absolutely sure?')) factoryReset()" style="width:100%; padding:12px; background:#c0392b; color:white; border:none; border-radius:6px; cursor:pointer;">
-                        ⚠️ Factory Reset
-                    </button>
-                    
-                    <div style="margin-top:20px; padding:15px; background:#fff3cd; border-left:4px solid #ffc107; border-radius:6px;">
-                        <strong style="color:#856404;">⚠️ Caution:</strong>
-                        <p style="margin:8px 0 0 0; color:#856404; font-size:0.85em;">Reset actions are permanent and cannot be undone. Always export first!</p>
+                
+                <!-- COLUMN 3: Quick Stats -->
+                <div style="border-left:1px solid #eee; padding-left:30px;">
+                    <h3>Quick Info</h3>
+                    <div id="quickStatsArea">
+                        <p style="color:#999;">Loading stats...</p>
                     </div>
                 </div>
             </div>
         </div>
     `;
     
-    loadPositions();
-    checkTailscaleUrl();
+    // Load quick stats
+    loadQuickStats();
+    
+    // Load Tailscale URL
+    loadTailscaleUrl();
+    
+    // Initialize drag-and-drop for position reordering
+    initializePositionDragAndDrop();
 }
 
-// ==========================================
-// POSITION ORDERING (Drag and Drop)
-// ==========================================
-async function loadPositions() {
+async function loadTailscaleUrl() {
+    const urlDisplay = document.getElementById('tailscaleUrlDisplay');
+    const statusDisplay = document.getElementById('tailscaleStatus');
+    const copyBtn = document.getElementById('copyUrlBtn');
+
+    // 1. Show Loading State
+    if (urlDisplay) urlDisplay.innerHTML = '<span style="opacity: 0.7;">Fetching URL...</span>';
+
     try {
-        const res = await fetch('api/get_positions.php');
+        // 2. Fetch the dynamic info from our PHP script
+        // Add timestamp to prevent browser caching
+        const res = await fetch('api/get_tailscale_info.php?t=' + new Date().getTime());
         const data = await res.json();
-        positions = data.positions || [];
-        
-        const container = document.getElementById('positionList');
-        if(!container) return;
-        
-        container.innerHTML = positions.map((p, idx) => `
-            <div class="position-item" draggable="true" data-position-id="${p.id}" 
-                 ondragstart="dragStart(event)" 
-                 ondragover="dragOver(event)" 
-                 ondrop="drop(event)"
-                 style="padding:12px; background:white; border:2px solid #e0e0e0; border-radius:8px; cursor:move; display:flex; align-items:center; gap:10px;">
-                <span style="color:#999; font-weight:bold;">${idx + 1}.</span>
-                <span style="flex:1;">${p.title}</span>
-                <span style="color:#ccc;">☰</span>
-            </div>
-        `).join('');
-    } catch(e) {
-        console.error('Failed to load positions:', e);
-    }
-}
 
-let draggedElement = null;
-
-function dragStart(e) {
-    draggedElement = e.target;
-    e.target.style.opacity = '0.5';
-}
-
-function dragOver(e) {
-    e.preventDefault();
-    const target = e.target.closest('.position-item');
-    if(target && target !== draggedElement) {
-        target.style.borderColor = '#667eea';
-    }
-}
-
-function drop(e) {
-    e.preventDefault();
-    
-    const target = e.target.closest('.position-item');
-    if(!target || target === draggedElement) return;
-    
-    target.style.borderColor = '#e0e0e0';
-    
-    // Swap elements visually
-    const container = target.parentNode;
-    const allItems = [...container.children];
-    
-    const draggedIndex = allItems.indexOf(draggedElement);
-    const targetIndex = allItems.indexOf(target);
-    
-    if(draggedIndex < targetIndex) {
-        target.parentNode.insertBefore(draggedElement, target.nextSibling);
-    } else {
-        target.parentNode.insertBefore(draggedElement, target);
-    }
-    
-    draggedElement.style.opacity = '1';
-    
-    // Update backend
-    savePositionOrder();
-}
-
-async function savePositionOrder() {
-    const items = document.querySelectorAll('.position-item');
-    const orderData = [];
-    
-    items.forEach((item, index) => {
-        orderData.push({
-            id: item.getAttribute('data-position-id'),
-            priority: index + 1
-        });
-    });
-    
-    try {
-        await fetch('api/update_position_order.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(orderData)
-        });
-    } catch(e) {
-        console.error('Failed to save order:', e);
-    }
-}
-
-// ==========================================
-// TAILSCALE URL FEATURE
-// ==========================================
-async function checkTailscaleUrl() {
-    try {
-        const res = await fetch('api/get_tailscale_url.php');
-        const data = await res.json();
-        
-        const urlDisplay = document.getElementById('tailscaleUrlDisplay');
-        const statusDisplay = document.getElementById('tailscaleStatus');
-        
-        if(data.success && data.url) {
+        if (data.success && data.url) {
+            // SUCCESS: We found the real dynamic URL
             urlDisplay.innerHTML = `<strong>${data.url}</strong>`;
-            statusDisplay.innerHTML = `✅ Tailscale connected - Accessible remotely`;
-            statusDisplay.style.color = '#10b981';
+            
+            statusDisplay.innerHTML = `✅ ${data.message}`; // "Online: https://..."
+            statusDisplay.style.color = "#d1fae5"; // Light green text
+            
+            // Enable the copy button and save the URL globally
+            copyBtn.disabled = false;
+            window.tailscaleUrl = data.url; 
         } else {
-            urlDisplay.innerHTML = `<span style="opacity:0.7;">No Tailscale URL detected</span>`;
-            statusDisplay.innerHTML = `ℹ️ ${data.message || 'Tailscale not configured'}`;
-            statusDisplay.style.color = 'rgba(255,255,255,0.8)';
+            // FAILURE: File not found or Tailscale not running
+            urlDisplay.innerHTML = `<span style="opacity: 0.7;">URL Unavailable</span>`;
+            statusDisplay.innerHTML = `⚠️ ${data.message || 'Run "Refresh Status" command'}`;
+            statusDisplay.style.color = "#fca5a5"; // Light red text
+            copyBtn.disabled = true;
         }
-    } catch(e) {
-        console.error('Failed to check Tailscale:', e);
-        document.getElementById('tailscaleUrlDisplay').innerHTML = `<span style="opacity:0.7;">Error checking connection</span>`;
-        document.getElementById('tailscaleStatus').innerHTML = `❌ Unable to detect Tailscale status`;
+
+    } catch (e) {
+        // ERROR: Network or JSON parse error
+        console.error("Tailscale check failed:", e);
+        if (urlDisplay) urlDisplay.innerHTML = '<span style="color: #fca5a5;">Connection Error</span>';
+        if (statusDisplay) statusDisplay.innerHTML = '❌ Server API not responding';
     }
 }
 
 function copyTailscaleUrl() {
-    const urlText = document.getElementById('tailscaleUrlDisplay').innerText;
+    const url = window.tailscaleUrl;
     
-    if(!urlText || urlText.includes('Loading') || urlText.includes('No Tailscale')) {
-        alert('No valid URL to copy');
+    if (!url) {
+        alert('No URL available to copy yet. Please wait for Tailscale to connect.');
         return;
     }
     
-    navigator.clipboard.writeText(urlText).then(() => {
+    // Copy to clipboard
+    navigator.clipboard.writeText(url).then(() => {
         const btn = document.getElementById('copyUrlBtn');
         const originalText = btn.innerHTML;
-        btn.innerHTML = '✅ Copied!';
+        
+        btn.innerHTML = '✓ Copied!';
         btn.style.background = '#10b981';
+        btn.style.color = 'white';
         
         setTimeout(() => {
             btn.innerHTML = originalText;
             btn.style.background = 'white';
+            btn.style.color = '#0891b2';
         }, 2000);
     }).catch(err => {
-        alert('Failed to copy: ' + err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        
+        try {
+            document.execCommand('copy');
+            alert('URL copied to clipboard:\n\n' + url);
+        } catch (e) {
+            alert('Could not copy URL. Please copy manually:\n\n' + url);
+        }
+        
+        document.body.removeChild(textArea);
     });
 }
 
-// ==========================================
-// SETTINGS: Total Voters & PIN Management
-// ==========================================
+async function loadQuickStats() {
+    try {
+        const res = await fetch('api/get_stats_full.php');
+        const data = await res.json();
+        
+        const container = document.getElementById('quickStatsArea');
+        if(!container) return;
+        
+        container.innerHTML = `
+            <div style="background:#e8f5e9; padding:15px; border-radius:8px; margin-bottom:15px;">
+                <div style="font-size:2em; font-weight:bold; color:#2e7d32;">${data.global.votes_cast || 0}</div>
+                <div style="color:#666; font-size:0.9em;">Votes Cast Today</div>
+            </div>
+            
+            <div style="background:#e3f2fd; padding:15px; border-radius:8px; margin-bottom:15px;">
+                <div style="font-size:2em; font-weight:bold; color:#1976d2;">${data.global.pending || 0}</div>
+                <div style="color:#666; font-size:0.9em;">Pending Voters</div>
+            </div>
+            
+            <div style="background:#fff3e0; padding:15px; border-radius:8px; margin-bottom:15px;">
+                <div style="font-size:2em; font-weight:bold; color:#f57c00;">${data.global.parties?.length || 0}</div>
+                <div style="color:#666; font-size:0.9em;">Registered Parties</div>
+            </div>
+            
+            <div style="background:#fce4ec; padding:15px; border-radius:8px;">
+                <div style="font-size:2em; font-weight:bold; color:#c2185b;">${data.positions?.length || 0}</div>
+                <div style="color:#666; font-size:0.9em;">Active Positions</div>
+            </div>
+        `;
+    } catch(e) {
+        console.error('Failed to load quick stats:', e);
+    }
+}
+
 async function saveTotalVoters() {
     const value = document.getElementById('totalVotersInput').value;
     try {
         await fetch('api/settings.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: 'total_voters', value })
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `key=total_voters&value=${value}`
         });
-        alert('Total voters updated successfully!');
+        alert('✓ Total voters updated successfully!');
+        loadQuickStats();
     } catch(e) {
-        alert('Failed to update total voters: ' + e.message);
+        alert('Error saving settings: ' + e.message);
     }
 }
 
 async function saveDailyPin() {
-    const pinValue = document.getElementById('dailyPinInput').value.trim();
+    const pin = document.getElementById('dailyPinInput').value.trim();
     
-    if(!pinValue || pinValue.length < 4) {
-        alert('❌ PIN must be at least 4 characters long');
+    if(!pin) {
+        alert('PIN cannot be empty');
+        return;
+    }
+    
+    if(pin.length < 4) {
+        alert('PIN should be at least 4 characters');
         return;
     }
     
     try {
-        const res = await fetch('api/settings.php', {
+        await fetch('api/settings.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                key: 'daily_pin', 
-                value: pinValue 
-            })
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `key=daily_pin&value=${encodeURIComponent(pin)}`
         });
         
-        const data = await res.json();
+        await fetch('api/settings.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `key=pin_updated_date&value=${new Date().toISOString().split('T')[0]}`
+        });
         
-        if(data.success) {
-            alert('✅ Daily PIN updated successfully!\n\nNew PIN: ' + pinValue + '\n\nAll clients will need this PIN to access the voting system.');
-        } else {
-            alert('❌ Failed to update PIN: ' + (data.message || 'Unknown error'));
-        }
+        alert(`✓ Daily PIN updated to: ${pin}\n\nShare this PIN with authorized voters.`);
     } catch(e) {
-        alert('❌ Error updating PIN: ' + e.message);
+        alert('Error saving PIN: ' + e.message);
     }
 }
 
@@ -370,460 +348,583 @@ async function viewActiveSessions() {
         const res = await fetch('api/get_sessions.php');
         const data = await res.json();
         
-        if(!data.success || !data.sessions || data.sessions.length === 0) {
-            alert('ℹ️ No active sessions found');
-            return;
+        if(data.sessions && data.sessions.length > 0) {
+            let msg = `Active Sessions (${data.sessions.length}):\n\n`;
+            data.sessions.forEach((s, i) => {
+                msg += `${i+1}. IP: ${s.ip_address}\n   Created: ${s.created_at}\n   Expires: ${s.expires_at}\n\n`;
+            });
+            alert(msg);
+        } else {
+            alert('No active sessions found.');
         }
-        
-        const sessionList = data.sessions.map(s => 
-            `IP: ${s.ip_address}\nUser Agent: ${s.user_agent}\nExpires: ${s.expires_at}`
-        ).join('\n\n---\n\n');
-        
-        alert(`Active Sessions (${data.sessions.length}):\n\n${sessionList}`);
     } catch(e) {
-        alert('Failed to load sessions: ' + e.message);
+        alert('Error loading sessions');
     }
 }
 
 async function clearAllSessions() {
-    if(!confirm('⚠️ This will log out all connected clients. Continue?')) {
+    if(!confirm('Are you sure you want to clear ALL active sessions?\n\nThis will require all clients to re-enter the PIN.')) {
         return;
     }
     
     try {
         const res = await fetch('api/clear_sessions.php', { method: 'POST' });
         const data = await res.json();
-        
-        if(data.success) {
-            alert('✅ All sessions cleared. Clients must re-enter PIN.');
-        } else {
-            alert('❌ Failed to clear sessions: ' + (data.message || 'Unknown error'));
-        }
+        alert(data.message || 'All sessions cleared!');
     } catch(e) {
-        alert('❌ Error: ' + e.message);
+        alert('Error clearing sessions');
     }
 }
 
 // ==========================================
-// DATA MANAGEMENT FUNCTIONS
+// MODE B: PARTY EDITOR (Unchanged from previous version)
 // ==========================================
-async function exportDatabase() {
-    window.location.href = 'api/export_db.php';
-}
-
-async function resetAllVotes() {
-    try {
-        const res = await fetch('api/reset_votes.php', { method: 'POST' });
-        const data = await res.json();
-        
-        if(data.success) {
-            alert('✅ All votes have been reset');
-            if(document.getElementById('analyticsView').style.display !== 'none') {
-                loadDashboard();
-            }
-        } else {
-            alert('Failed to reset votes: ' + (data.message || 'Unknown error'));
-        }
-    } catch(e) {
-        alert('Error: ' + e.message);
-    }
-}
-
-async function factoryReset() {
-    try {
-        const res = await fetch('api/factory_reset.php', { method: 'POST' });
-        const data = await res.json();
-        
-        if(data.success) {
-            alert('✅ Factory reset complete. Reloading...');
-            location.reload();
-        } else {
-            alert('Failed to reset: ' + (data.message || 'Unknown error'));
-        }
-    } catch(e) {
-        alert('Error: ' + e.message);
-    }
-}
-
-// ==========================================
-// MODE B: PARTY EDITOR
-// ==========================================
-function resetPartyForm() {
-    document.querySelectorAll('.col-nav .nav-item').forEach(el => el.classList.remove('active'));
-    currentPartyId = null;
-    
-    const container = document.getElementById('setupDynamicContent');
-    container.innerHTML = `
-        <div class="col-content" style="grid-column: 2 / 3; padding: 30px;">
-            <h2>Create New Party</h2>
-            <form id="partyForm" onsubmit="saveParty(event)">
-                <label>Party Name</label>
-                <input type="text" name="name" required placeholder="e.g., SINAG">
-                
-                <label>Slogan (Optional)</label>
-                <input type="text" name="slogan" placeholder="e.g., Lighting the Path Forward">
-                
-                <label>Brand Color</label>
-                <input type="color" name="color" value="#667eea">
-                
-                <label>Logo/Image URL (Optional)</label>
-                <input type="text" name="logo_url" placeholder="assets/party_logo.png">
-                
-                <button type="submit">Create Party</button>
-            </form>
-        </div>
-        <div class="col-content" style="grid-column: 3 / 4; background: #f9f9f9; padding: 30px;">
-            <h3>📝 Instructions</h3>
-            <p>1. Enter a unique party name</p>
-            <p>2. Add a slogan (optional)</p>
-            <p>3. Pick a brand color</p>
-            <p>4. Submit to create the party</p>
-        </div>
-    `;
-}
-
 async function loadAndRenderParty(partyName) {
     try {
-        const res = await fetch(`api/get_party_full.php?name=${encodeURIComponent(partyName)}`);
-        const result = await res.json();
+        const res = await fetch('api/get_party_full.php?name=' + encodeURIComponent(partyName)+ '&t=' + new Date().getTime());
+        const party = await res.json();
         
-        if(!result.success) {
-            alert('Failed to load party');
+        if(!party.success) {
+            alert('Failed to load party data');
             return;
         }
         
-        const party = result.data;
-        currentPartyId = party.id;
-        
-        document.querySelectorAll('.col-nav .nav-item').forEach(el => el.classList.remove('active'));
-        document.querySelector(`[data-party-id="${party.id || party.name}"]`)?.classList.add('active');
-        
-        const container = document.getElementById('setupDynamicContent');
-        container.innerHTML = `
-            <div class="col-content" style="grid-column: 2 / 3; padding: 30px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h2>Edit ${party.name}</h2>
-                    <button type="button" onclick="if(confirm('Delete this party?')) deleteParty(${party.id})" style="background:#e74c3c; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Delete Party</button>
-                </div>
-                
-                <form id="partyForm" onsubmit="saveParty(event)">
-                    <input type="hidden" name="id" value="${party.id}">
-                    
-                    <label>Party Name</label>
-                    <input type="text" name="name" value="${party.name}" required>
-                    
-                    <label>Slogan</label>
-                    <input type="text" name="slogan" value="${party.slogan || ''}">
-                    
-                    <label>Brand Color</label>
-                    <input type="color" name="color" value="${party.color}">
-                    
-                    <label>Logo URL</label>
-                    <input type="text" name="logo_url" value="${party.logo_url || ''}">
-                    
-                    <button type="submit">Save Changes</button>
-                </form>
-            </div>
-            
-            <div class="col-content" style="grid-column: 3 / 4; background: #f9f9f9; padding: 30px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h3>Candidates</h3>
-                    <button onclick="addCandidateRow()" style="background:#27ae60; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">+ Add</button>
-                </div>
-                
-                <div id="candidateList">
-                    ${party.candidates && party.candidates.length > 0 
-                        ? party.candidates.map(c => renderCandidateRow(c)).join('') 
-                        : '<p style="color:#999;">No candidates yet</p>'}
-                </div>
-            </div>
-        `;
-        
+        renderPartyMode(party.data);
     } catch(e) {
-        alert('Error loading party: ' + e.message);
+        console.error('Error loading party:', e);
+        alert('Error loading party data');
     }
 }
 
-function renderCandidateRow(candidate) {
-    return `
-        <div class="candidate-row" style="background:white; padding:15px; border-radius:8px; margin-bottom:10px; border:2px solid #e0e0e0;">
-            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:10px;">
-                <strong>${candidate.full_name}</strong>
-                <button onclick="if(confirm('Delete candidate?')) deleteCandidate(${candidate.id})" style="background:#e74c3c; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.85em;">Delete</button>
-            </div>
-            <div style="color:#666; font-size:0.9em; margin-bottom:8px;">Position: ${candidate.position_title || 'Unknown'}</div>
-            ${candidate.photo_url ? `<div style="color:#999; font-size:0.85em;">Photo: ${candidate.photo_url}</div>` : ''}
-        </div>
-    `;
-}
-
-function addCandidateRow() {
-    const list = document.getElementById('candidateList');
-    if(list.querySelector('p')) list.innerHTML = ''; // Remove "No candidates" message
+function renderPartyMode(party) {
+    // Clear all nav active states first
+    document.querySelectorAll('.col-nav .nav-item').forEach(el => el.classList.remove('active'));
     
-    const newRow = document.createElement('div');
-    newRow.className = 'candidate-row';
-    newRow.style.cssText = 'background:white; padding:15px; border-radius:8px; margin-bottom:10px; border:2px solid #667eea;';
-    newRow.innerHTML = `
-        <form onsubmit="saveCandidate(event, this)" style="display:flex; flex-direction:column; gap:10px;">
-            <input type="hidden" name="party_id" value="${currentPartyId}">
-            
-            <input type="text" name="full_name" placeholder="Full Name" required style="padding:8px; border:1px solid #ddd; border-radius:4px;">
-            
-            <select name="position_id" required style="padding:8px; border:1px solid #ddd; border-radius:4px;">
-                <option value="">Select Position</option>
-                ${positions.map(p => `<option value="${p.id}">${p.title}</option>`).join('')}
-            </select>
-            
-            <input type="text" name="photo_url" placeholder="Photo URL (optional)" style="padding:8px; border:1px solid #ddd; border-radius:4px;">
-            
-            <div style="display:flex; gap:10px;">
-                <button type="submit" style="flex:1; background:#27ae60; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer;">Save</button>
-                <button type="button" onclick="this.closest('.candidate-row').remove()" style="background:#95a5a6; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">Cancel</button>
+    // Only activate if this is an existing party (has a name)
+    if(party && party.name && party.name.trim() !== '') {
+        const items = document.querySelectorAll('.col-nav .nav-item');
+        items.forEach(el => {
+            if(el.textContent.trim().includes(party.name)) {
+                el.classList.add('active');
+            }
+        });
+    }
+    // If it's a new party (empty name), no nav item should be active
+    
+    currentPartyId = party.id;
+    
+    const container = document.getElementById('setupDynamicContent');
+    container.innerHTML = `
+        <form id="partyForm" onsubmit="saveParty(event)" method="POST" style="display: contents;">
+            <div class="col-content middle" style="padding:30px;">
+                <h3 style="margin-bottom:20px;">1. Party Details</h3>
+                
+                <input type="hidden" name="party_id" value="${party.id || ''}">
+                
+                <label style="display:block; font-weight:600; margin-bottom:5px;">Party Name</label>
+                <input type="text" name="party_name" value="${party.name || ''}" required style="margin-bottom:20px;">
+                
+                <label style="display:block; font-weight:600; margin-bottom:5px;">Party Slogan</label>
+                <input type="text" name="party_slogan" value="${party.slogan || ''}" placeholder="e.g., Leading with Integrity" style="margin-bottom:20px;">
+                
+                <label style="display:block; font-weight:600; margin-bottom:5px;">Theme Color</label>
+                <input type="color" name="party_color" value="${party.color || '#cccccc'}" style="height:50px; margin-bottom:20px;">
+                
+                <label style="display:block; font-weight:600; margin-bottom:5px;">Party Logo</label>
+                <input type="file" name="party_logo" accept="image/*" style="margin-bottom:20px;">
+                ${party.logo_url ? `<img src="${party.logo_url}" style="max-width:100px; margin-bottom:10px; border:1px solid #ddd; border-radius:4px;">` : ''}
+                
+                <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-top:20px;">
+                    <button type="submit" class="btn btn-primary" style="background: #d4a017; color:white; border:none; padding:15px; border-radius:6px; font-weight:600; cursor:pointer;">
+                        💾 SAVE ENTIRE PARTY
+                    </button>
+                    ${party.id ? `
+                        <button type="button" onclick="deleteParty(${party.id}, '${party.name.replace(/'/g, "\\'")}')" style="background:#e74c3c; color:white; border:none; padding:15px; border-radius:6px; font-weight:600; cursor:pointer;">
+                            🗑️ DELETE PARTY
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+
+            <div class="col-content right" style="padding:30px; background:#fafafa;">
+                <h3 style="margin-bottom:20px;">2. Candidates</h3>
+                <div id="partyCandidatesList">
+                    ${renderCandidatesList(party.candidates || [])}
+                </div>
+                <button type="button" class="btn-new-party" onclick="addCandidateSlot()" style="margin-top:15px;">+ Add Candidate</button>
             </div>
         </form>
     `;
+}
+
+function renderCandidatesList(candidates) {
+    if(!candidates || candidates.length === 0) {
+        return '<p style="color:#999; text-align:center; padding:20px;">No candidates yet. Click "+ Add Candidate" to start.</p>';
+    }
     
-    list.appendChild(newRow);
+    return candidates.map((c, index) => `
+        <div class="cand-card" style="margin-bottom:15px; padding:15px; background:white; border:1px solid #eee; border-radius:8px;">
+            <div style="display:flex; gap:15px; align-items:center;">
+                <div style="width:50px; height:50px; background:#ddd; border-radius:50%; overflow:hidden; flex-shrink:0;">
+                    ${c.photo_url ? `<img src="${c.photo_url}" style="width:100%; height:100%; object-fit:cover;">` : '<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:1.5em;">👤</div>'}
+                </div>
+                <div style="flex:1;">
+                    <input type="hidden" name="cand_ids[]" value="${c.id || ''}">
+                    <input type="text" name="cand_names[]" value="${c.full_name || ''}" placeholder="Candidate Name" style="margin-bottom:10px;" required>
+                    <select name="cand_positions[]" style="margin-bottom:5px;" required>
+                        <option value="">Select Position</option>
+                        ${positions.map(p => `<option value="${p.id}" ${c.position_id == p.id ? 'selected' : ''}>${p.title}</option>`).join('')}
+                    </select>
+                    <input type="file" name="cand_photos_${index}" accept="image/*" style="font-size:0.85em;">
+                </div>
+                <span onclick="removeCandidateSlot(this)" style="color:#e74c3c; cursor:pointer; font-size:1.5em; line-height:1; padding:5px;">&times;</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function addCandidateSlot() {
+    const container = document.getElementById('partyCandidatesList');
+    const index = container.children.length;
+    
+    const newSlot = document.createElement('div');
+    newSlot.className = 'cand-card';
+    newSlot.style.cssText = 'margin-bottom:15px; padding:15px; background:white; border:1px solid #eee; border-radius:8px;';
+    newSlot.innerHTML = `
+        <div style="display:flex; gap:15px; align-items:center;">
+            <div style="width:50px; height:50px; background:#ddd; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5em; flex-shrink:0;">👤</div>
+            <div style="flex:1;">
+                <input type="text" name="cand_names[]" placeholder="Candidate Name" style="margin-bottom:10px;" required>
+                <select name="cand_positions[]" style="margin-bottom:5px;" required>
+                    <option value="">Select Position</option>
+                    ${positions.map(p => `<option value="${p.id}">${p.title}</option>`).join('')}
+                </select>
+                <input type="file" name="cand_photos_${index}" accept="image/*" style="font-size:0.85em;">
+            </div>
+            <span onclick="removeCandidateSlot(this)" style="color:#e74c3c; cursor:pointer; font-size:1.5em; line-height:1; padding:5px;">&times;</span>
+        </div>
+    `;
+    container.appendChild(newSlot);
+}
+
+function removeCandidateSlot(btn) {
+    if(confirm('Remove this candidate?')) {
+        btn.closest('.cand-card').remove();
+    }
 }
 
 async function saveParty(event) {
     event.preventDefault();
     
     const formData = new FormData(event.target);
-    const data = Object.fromEntries(formData.entries());
     
     try {
-        const res = await fetch('api/save_party.php', {
+        const res = await fetch('api/save_party_batch.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: formData
         });
         
         const result = await res.json();
         
         if(result.success) {
-            alert('Party saved!');
-            loadPartyList();
-            if(data.id) {
-                loadAndRenderParty(data.name);
+            if(result.deleted) {
+                // Party was auto-deleted because it had no candidates
+                alert('⚠️ ' + result.message);
+                await loadPartyList();
+                renderSettingsMode(); // Return to settings view
             } else {
-                loadAndRenderParty(result.name || data.name);
+                alert('✓ Party saved successfully!');
+                await loadPartyList();
             }
         } else {
-            alert('Failed to save: ' + (result.message || 'Unknown error'));
+            alert('Error: ' + result.message);
         }
     } catch(e) {
-        alert('Error: ' + e.message);
+        alert('Network error: ' + e.message);
     }
 }
 
-async function saveCandidate(event, form) {
-    event.preventDefault();
-    
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
-    
-    try {
-        const res = await fetch('api/save_candidate.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        
-        const result = await res.json();
-        
-        if(result.success) {
-            alert('Candidate saved!');
-            // Reload the current party to refresh the candidate list
-            const partyName = parties.find(p => p.id == currentPartyId)?.name;
-            if(partyName) loadAndRenderParty(partyName);
-        } else {
-            alert('Failed to save: ' + (result.message || 'Unknown error'));
-        }
-    } catch(e) {
-        alert('Error: ' + e.message);
+async function deleteParty(partyId, partyName) {
+    if(!confirm(`Are you sure you want to delete "${partyName}"?\n\nThis will permanently remove the party and ALL its candidates.\n\nThis action cannot be undone!`)) {
+        return;
     }
-}
-
-async function deleteParty(partyId) {
+    
+    // Double confirmation for safety
+    const userInput = prompt(`⚠️ FINAL WARNING ⚠️\n\nYou are about to delete "${partyName}" and all associated candidates.\n\nType the party name exactly to confirm deletion:\n\n(Type: ${partyName})`);
+    
+    if(userInput !== partyName) {
+        if(userInput !== null) { // User didn't click cancel
+            alert('Party name did not match. Deletion cancelled.');
+        }
+        return;
+    }
+    
     try {
         const res = await fetch('api/delete_party.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: partyId })
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `party_id=${partyId}`
         });
         
         const result = await res.json();
         
         if(result.success) {
-            alert('Party deleted');
-            loadPartyList();
-            resetPartyForm();
+            alert(`✓ "${partyName}" has been deleted successfully.`);
+            await loadPartyList();
+            renderSettingsMode(); // Return to settings view
         } else {
-            alert('Failed: ' + (result.message || 'Unknown error'));
+            alert('Error: ' + result.message);
         }
     } catch(e) {
-        alert('Error: ' + e.message);
+        console.error(e);
+        alert('Network error while deleting party.');
     }
 }
 
-async function deleteCandidate(candidateId) {
+function resetPartyForm() {
+    // Clear all navigation active states when creating a new party
+    document.querySelectorAll('.col-nav .nav-item').forEach(el => el.classList.remove('active'));
+    
+    renderPartyMode({
+        name: '',
+        slogan: '',
+        color: '#cccccc',
+        candidates: []
+    });
+}
+
+// ==========================================
+// POSITIONS MANAGEMENT
+// ==========================================
+async function loadPositions() {
     try {
-        const res = await fetch('api/delete_candidate.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: candidateId })
+        const res = await fetch('api/manage_positions.php?action=list');
+        positions = await res.json();
+    } catch(e) {
+        console.error('Failed to load positions:', e);
+    }
+}
+
+async function addPosition() {
+    const title = document.getElementById('newPosTitle').value.trim();
+    if(!title) {
+        alert('Please enter a position title');
+        return;
+    }
+    
+    try {
+        await fetch('api/manage_positions.php?action=add', { 
+            method:'POST', 
+            headers:{'Content-Type':'application/x-www-form-urlencoded'}, 
+            body:`title=${encodeURIComponent(title)}` 
         });
         
-        const result = await res.json();
-        
-        if(result.success) {
-            alert('Candidate deleted');
-            const partyName = parties.find(p => p.id == currentPartyId)?.name;
-            if(partyName) loadAndRenderParty(partyName);
-        } else {
-            alert('Failed: ' + (result.message || 'Unknown error'));
-        }
+        document.getElementById('newPosTitle').value = '';
+        await loadPositions();
+        renderSettingsMode();
     } catch(e) {
-        alert('Error: ' + e.message);
+        alert('Error adding position: ' + e.message);
+    }
+}
+
+async function deletePosition(id) {
+    if(!confirm('Delete this position? This will also remove all candidates running for it!')) {
+        return;
+    }
+    
+    try {
+        await fetch(`api/manage_positions.php?action=delete&id=${id}`);
+        await loadPositions();
+        renderSettingsMode();
+    } catch(e) {
+        alert('Error deleting position: ' + e.message);
     }
 }
 
 // ==========================================
-// ANALYTICS TAB
+// POSITION REORDERING (Drag & Drop)
+// ==========================================
+let draggedElement = null;
+
+function initializePositionDragAndDrop() {
+    const container = document.getElementById('settingsPosList');
+    if(!container) return;
+    
+    const items = container.querySelectorAll('.position-item');
+    
+    items.forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragover', handleDragOver);
+        item.addEventListener('drop', handleDrop);
+        item.addEventListener('dragenter', handleDragEnter);
+        item.addEventListener('dragleave', handleDragLeave);
+        item.addEventListener('dragend', handleDragEnd);
+    });
+}
+
+function handleDragStart(e) {
+    draggedElement = this;
+    this.style.opacity = '0.5';
+    this.style.transform = 'scale(0.98)';
+    this.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.innerHTML);
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDragEnter(e) {
+    if (this !== draggedElement) {
+        this.style.background = 'linear-gradient(135deg, #fff8e1 0%, #ffe0b2 100%)';
+        this.style.borderColor = '#d4a017';
+        this.style.borderWidth = '2px';
+        this.style.transform = 'translateY(-2px)';
+    }
+}
+
+function handleDragLeave(e) {
+    this.style.background = '#fafafa';
+    this.style.borderColor = '#eee';
+    this.style.borderWidth = '1px';
+    this.style.transform = 'translateY(0)';
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+    
+    if (draggedElement !== this) {
+        // Get the container
+        const container = document.getElementById('settingsPosList');
+        const allItems = Array.from(container.querySelectorAll('.position-item'));
+        
+        // Find positions
+        const draggedIndex = allItems.indexOf(draggedElement);
+        const targetIndex = allItems.indexOf(this);
+        
+        // Reorder in DOM
+        if (draggedIndex < targetIndex) {
+            this.parentNode.insertBefore(draggedElement, this.nextSibling);
+        } else {
+            this.parentNode.insertBefore(draggedElement, this);
+        }
+        
+        // Update positions array order
+        const movedItem = positions.splice(draggedIndex, 1)[0];
+        positions.splice(targetIndex, 0, movedItem);
+        
+        // Save new order to backend
+        savePositionOrder();
+    }
+    
+    return false;
+}
+
+function handleDragEnd(e) {
+    this.style.opacity = '1';
+    this.style.transform = 'scale(1)';
+    this.style.boxShadow = 'none';
+    
+    // Reset all items
+    const items = document.querySelectorAll('.position-item');
+    items.forEach(item => {
+        item.style.background = '#fafafa';
+        item.style.borderColor = '#eee';
+        item.style.borderWidth = '1px';
+        item.style.transform = 'translateY(0)';
+    });
+}
+
+async function movePositionUp(index) {
+    if (index <= 0) return;
+    
+    // Swap positions in the array
+    const temp = positions[index];
+    positions[index] = positions[index - 1];
+    positions[index - 1] = temp;
+    
+    // Save to backend and refresh display
+    await savePositionOrder();
+    renderSettingsMode();
+}
+
+async function movePositionDown(index) {
+    if (index >= positions.length - 1) return;
+    
+    // Swap positions in the array
+    const temp = positions[index];
+    positions[index] = positions[index + 1];
+    positions[index + 1] = temp;
+    
+    // Save to backend and refresh display
+    await savePositionOrder();
+    renderSettingsMode();
+}
+
+async function savePositionOrder() {
+    // Create an array of position IDs in their new order
+    const newOrder = positions.map(p => p.id);
+    
+    try {
+        const response = await fetch('api/manage_positions.php?action=reorder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ order: newOrder })
+        });
+        
+        const result = await response.json();
+        
+        if(result.success) {
+            // Update the display to show new order numbers
+            const container = document.getElementById('settingsPosList');
+            const items = container.querySelectorAll('.position-item');
+            items.forEach((item, index) => {
+                const orderSpan = item.querySelector('span[style*="color:#999"]');
+                if(orderSpan && orderSpan.textContent.includes('Order:')) {
+                    orderSpan.textContent = `(Order: ${index + 1})`;
+                }
+                item.dataset.order = index;
+            });
+            
+            // Show success message briefly
+            const container2 = document.getElementById('settingsPosList');
+            const existingMsg = container2.parentElement.querySelector('.reorder-success-msg');
+            if(existingMsg) existingMsg.remove();
+            
+            const successMsg = document.createElement('p');
+            successMsg.className = 'reorder-success-msg';
+            successMsg.style.cssText = 'color:#4caf50; font-size:0.9em; margin-top:10px; font-weight:600;';
+            successMsg.textContent = '✓ Position order saved successfully!';
+            container2.parentElement.appendChild(successMsg);
+            
+            setTimeout(() => successMsg.remove(), 3000);
+        } else {
+            alert('Failed to save position order: ' + (result.message || 'Unknown error'));
+            // Reload to reset order
+            await loadPositions();
+            renderSettingsMode();
+        }
+    } catch(e) {
+        console.error('Error saving position order:', e);
+        alert('Error saving position order. Please try again.');
+        // Reload to reset order
+        await loadPositions();
+        renderSettingsMode();
+    }
+}
+
+// ==========================================
+// ANALYTICS TAB (Unchanged from previous version)
 // ==========================================
 async function loadDashboard() {
     try {
         const res = await fetch('api/get_stats_full.php');
-        const data = await res.json();
-        
-        if(!data.success) {
-            alert('Failed to load analytics');
-            return;
-        }
-        
-        analyticsData = data;
-        
-        const navContainer = document.getElementById('analyticsPosList');
-        navContainer.innerHTML = data.positions.map(p => `
-            <div class="nav-item" onclick="renderPositionAnalytics(${p.id})">
-                ${p.title}
-            </div>
-        `).join('');
-        
+        analyticsData = await res.json();
+        renderAnalyticsSidebar();
         renderMainDashboard();
-        
     } catch(e) {
-        console.error('Failed to load dashboard:', e);
-        alert('Error loading analytics');
+        console.error('Failed to load analytics:', e);
     }
 }
 
+function renderAnalyticsSidebar() {
+    const list = document.getElementById('analyticsPosList');
+    if(!analyticsData || !analyticsData.positions) {
+        list.innerHTML = '<p style="padding:20px; color:#999;">No data available</p>';
+        return;
+    }
+    
+    list.innerHTML = analyticsData.positions.map((p, i) => {
+        const totalVotes = p.total_votes || 0;
+        const remaining = p.remaining || 0;
+        const total = totalVotes + remaining;
+        
+        return `
+            <div class="nav-item" onclick="renderPosStat(${i})" style="cursor:pointer;">
+                <div style="flex:1">
+                    <div style="font-weight:600; margin-bottom:8px;">${p.title}</div>
+                    <div style="font-size:0.85em; color:#666; margin-bottom:5px;">${totalVotes} votes / ${total} total</div>
+                    <div class="line-bar-container" style="height:8px; background:#eee; border-radius:4px; overflow:hidden; display:flex;">
+                        ${p.candidates.map(c => {
+                            const percentage = total > 0 ? (c.votes / total) * 100 : 0;
+                            return `<div style="width:${percentage}%; background:${c.party_color}; height:100%;" title="${c.full_name}: ${c.votes} votes"></div>`;
+                        }).join('')}
+                        ${remaining > 0 ? `<div style="width:${(remaining/total)*100}%; background:#e0e0e0; height:100%;" title="Remaining: ${remaining}"></div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
 function renderMainDashboard() {
-    if(!analyticsData) return;
-    
-    document.querySelectorAll('#analyticsView .nav-item').forEach(el => el.classList.remove('active'));
-    
-    const g = analyticsData.global;
     const main = document.getElementById('analyticsMain');
+    
+    if(!analyticsData) {
+        main.innerHTML = '<p>Loading...</p>';
+        return;
+    }
+    
+    const global = analyticsData.global;
+    const totalEnrolled = global.total_enrolled || 0;
+    const votesCast = global.votes_cast || 0;
+    const pending = global.pending || 0;
     
     main.innerHTML = `
         <div style="padding:30px;">
-            <h2 style="margin-bottom:30px;">📊 Election Overview</h2>
+            <h2 style="margin-bottom:30px;">📊 Dashboard Overview</h2>
             
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; margin-bottom:40px;">
-                <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; padding:25px; border-radius:12px; box-shadow:0 4px 15px rgba(102,126,234,0.3);">
-                    <div style="font-size:0.9em; opacity:0.9; margin-bottom:10px;">Total Enrolled</div>
-                    <div style="font-size:3em; font-weight:bold;">${g.total_enrolled}</div>
+            <div style="background:white; padding:25px; border-radius:12px; margin-bottom:30px; box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+                <h3 style="margin-bottom:15px;">Total Voter Turnout</h3>
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span style="font-weight:600; color:#28a745;">${votesCast} Voted</span>
+                    <span style="color:#999;">${pending} Remaining</span>
                 </div>
-                
-                <div style="background:linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color:white; padding:25px; border-radius:12px; box-shadow:0 4px 15px rgba(245,87,108,0.3);">
-                    <div style="font-size:0.9em; opacity:0.9; margin-bottom:10px;">Votes Cast</div>
-                    <div style="font-size:3em; font-weight:bold;">${g.votes_cast}</div>
-                    <div style="font-size:0.85em; opacity:0.8; margin-top:5px;">${g.total_enrolled > 0 ? ((g.votes_cast/g.total_enrolled)*100).toFixed(1) : 0}% turnout</div>
+                <div style="height:30px; background:#e0e0e0; border-radius:8px; overflow:hidden; display:flex;">
+                    <div style="width:${totalEnrolled > 0 ? (votesCast/totalEnrolled)*100 : 0}%; background:linear-gradient(90deg, #28a745, #20c997); height:100%;"></div>
                 </div>
-                
-                <div style="background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color:white; padding:25px; border-radius:12px; box-shadow:0 4px 15px rgba(79,172,254,0.3);">
-                    <div style="font-size:0.9em; opacity:0.9; margin-bottom:10px;">Pending</div>
-                    <div style="font-size:3em; font-weight:bold;">${g.pending}</div>
-                    <div style="font-size:0.85em; opacity:0.8; margin-top:5px;">${g.total_enrolled > 0 ? ((g.pending/g.total_enrolled)*100).toFixed(1) : 0}% remaining</div>
-                </div>
+                <p style="margin-top:10px; color:#666; font-size:0.9em;">${totalEnrolled > 0 ? ((votesCast/totalEnrolled)*100).toFixed(1) : 0}% turnout</p>
             </div>
             
-            <div style="background:white; padding:30px; border-radius:12px; margin-bottom:30px;">
+            <div style="background:white; padding:25px; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.05);">
                 <h3 style="margin-bottom:20px;">Party Performance</h3>
-                <div style="max-width:600px; margin:0 auto;">
-                    <canvas id="partyChart"></canvas>
-                </div>
-            </div>
-            
-            <div style="background:white; padding:30px; border-radius:12px;">
-                <h3 style="margin-bottom:20px;">Position-by-Position Summary</h3>
-                <div style="display:grid; gap:15px;">
-                    ${analyticsData.positions.map(pos => {
-                        const total = g.total_enrolled;
-                        const voted = pos.total_votes;
-                        const abstain = pos.abstain_votes || 0;
-                        const remaining = pos.remaining;
-                        const candidateVotes = voted - abstain;
-                        
-                        return `
-                            <div style="padding:20px; border:2px solid #e0e0e0; border-radius:10px; cursor:pointer; transition:all 0.3s;" 
-                                 onclick="renderPositionAnalytics(${pos.id})"
-                                 onmouseover="this.style.borderColor='#667eea'; this.style.background='#f8f9ff';"
-                                 onmouseout="this.style.borderColor='#e0e0e0'; this.style.background='white';">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                                    <h4 style="margin:0; color:#667eea;">${pos.title}</h4>
-                                    <div style="text-align:right;">
-                                        <div style="font-size:1.5em; font-weight:bold; color:#333;">${voted}</div>
-                                        <div style="font-size:0.85em; color:#999;">votes cast</div>
-                                    </div>
-                                </div>
-                                <div style="height:30px; background:#e0e0e0; border-radius:8px; overflow:hidden; display:flex;">
-                                    <div style="width:${total > 0 ? (candidateVotes/total)*100 : 0}%; background:linear-gradient(90deg, #667eea 0%, #764ba2 100%); display:flex; align-items:center; justify-content:center; color:white; font-size:0.85em; font-weight:600;">
-                                        ${candidateVotes > 0 ? candidateVotes : ''}
-                                    </div>
-                                    ${abstain > 0 ? `
-                                        <div style="width:${total > 0 ? (abstain/total)*100 : 0}%; background:#95a5a6; display:flex; align-items:center; justify-content:center; color:white; font-size:0.85em; font-weight:600;">
-                                            ${abstain} Abstain
-                                        </div>
-                                    ` : ''}
-                                    <div style="width:${total > 0 ? (remaining/total)*100 : 0}%; background:#f0f0f0; display:flex; align-items:center; justify-content:center; color:#999; font-size:0.85em;">
-                                        ${remaining > 0 ? remaining + ' left' : ''}
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
+                <canvas id="partyBarChart" style="max-height:400px;"></canvas>
             </div>
         </div>
     `;
     
     setTimeout(() => {
-        const ctx = document.getElementById('partyChart');
-        if(ctx && g.parties) {
+        const ctx = document.getElementById('partyBarChart');
+        if(ctx && global.parties) {
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: g.parties.map(p => p.name),
+                    labels: global.parties.map(p => p.name),
                     datasets: [{
                         label: 'Total Votes',
-                        data: g.parties.map(p => p.vote_count),
-                        backgroundColor: g.parties.map(p => p.color),
-                        borderWidth: 2,
-                        borderColor: '#fff'
+                        data: global.parties.map(p => p.vote_count || 0),
+                        backgroundColor: global.parties.map(p => p.color),
+                        borderColor: global.parties.map(p => p.color),
+                        borderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { display: false }
-                    },
+                    maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true }
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
                     }
                 }
             });
@@ -831,22 +932,18 @@ function renderMainDashboard() {
     }, 100);
 }
 
-function renderPositionAnalytics(positionId) {
-    if(!analyticsData) return;
-    
-    const pos = analyticsData.positions.find(p => p.id == positionId);
-    if(!pos) return;
-    
-    document.querySelectorAll('#analyticsView .nav-item').forEach(el => el.classList.remove('active'));
-    event?.target?.classList.add('active');
-    
+function renderPosStat(index) {
+    const pos = analyticsData.positions[index];
     const main = document.getElementById('analyticsMain');
-    const total = analyticsData.global.total_enrolled;
-    const remaining = pos.remaining;
-    const abstainVotes = pos.abstain_votes || 0;
-    const candidateCount = pos.candidates.length;
     
-    // CASE 1: Only 1 candidate (Unopposed)
+    document.querySelectorAll('#analyticsPosList .nav-item').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('#analyticsPosList .nav-item')[index].classList.add('active');
+    
+    const candidateCount = pos.candidates.length;
+    const totalVotes = pos.total_votes || 0;
+    const remaining = pos.remaining || 0;
+    const total = totalVotes + remaining;
+    
     if(candidateCount === 1) {
         const c = pos.candidates[0];
         main.innerHTML = `
@@ -861,17 +958,9 @@ function renderPositionAnalytics(positionId) {
                     <div style="font-size:3em; font-weight:bold; color:${c.party_color}; margin-bottom:10px;">${c.votes}</div>
                     <p style="color:#999;">Current Votes</p>
                     
-                    ${abstainVotes > 0 ? `
-                        <div style="margin-top:30px; padding:20px; background:#f9f9f9; border-radius:8px;">
-                            <div style="font-size:1.5em; font-weight:bold; color:#95a5a6; margin-bottom:5px;">${abstainVotes}</div>
-                            <div style="color:#666;">Abstain Votes</div>
-                        </div>
-                    ` : ''}
-                    
                     <div style="margin-top:30px;">
                         <div style="height:20px; background:#e0e0e0; border-radius:10px; overflow:hidden; display:flex;">
                             <div style="width:${total > 0 ? (c.votes/total)*100 : 0}%; background:${c.party_color};"></div>
-                            ${abstainVotes > 0 ? `<div style="width:${total > 0 ? (abstainVotes/total)*100 : 0}%; background:#95a5a6;"></div>` : ''}
                         </div>
                         <p style="margin-top:10px; color:#666;">${remaining} voters remaining</p>
                     </div>
@@ -879,7 +968,6 @@ function renderPositionAnalytics(positionId) {
             </div>
         `;
     }
-    // CASE 2: 2 candidates (Head to Head)
     else if(candidateCount === 2) {
         const [c1, c2] = pos.candidates;
         main.innerHTML = `
@@ -890,11 +978,6 @@ function renderPositionAnalytics(positionId) {
                         <div style="width:${total > 0 ? (c1.votes/total)*100 : 0}%; background:${c1.party_color}; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">
                             ${c1.votes}
                         </div>
-                        ${abstainVotes > 0 ? `
-                            <div style="width:${total > 0 ? (abstainVotes/total)*100 : 0}%; background:#95a5a6; display:flex; align-items:center; justify-content:center; color:white; font-size:0.9em;">
-                                ${abstainVotes} Abstain
-                            </div>
-                        ` : ''}
                         <div style="width:${total > 0 ? (remaining/total)*100 : 0}%; background:#e0e0e0; display:flex; align-items:center; justify-content:center; color:#666; font-size:0.9em;">
                             ${remaining} left
                         </div>
@@ -924,18 +1007,10 @@ function renderPositionAnalytics(positionId) {
                             <p style="color:#999; font-size:0.9em;">${total > 0 ? ((c2.votes/total)*100).toFixed(1) : 0}%</p>
                         </div>
                     </div>
-                    
-                    ${abstainVotes > 0 ? `
-                        <div style="margin-top:30px; padding:20px; background:#f9f9f9; border-radius:8px; text-align:center;">
-                            <div style="font-size:1.5em; font-weight:bold; color:#95a5a6; margin-bottom:5px;">${abstainVotes}</div>
-                            <div style="color:#666;">Abstain Votes (${total > 0 ? ((abstainVotes/total)*100).toFixed(1) : 0}%)</div>
-                        </div>
-                    ` : ''}
                 </div>
             </div>
         `;
     }
-    // CASE 3: Multiple candidates (3+)
     else {
         main.innerHTML = `
             <div style="padding:30px;">
@@ -954,16 +1029,6 @@ function renderPositionAnalytics(positionId) {
                                 <div style="color:#999; font-size:0.85em;">${total > 0 ? ((c.votes/total)*100).toFixed(1) : 0}%</div>
                             </div>
                         `).join('')}
-                        
-                        ${abstainVotes > 0 ? `
-                            <div style="padding:15px; border-left:4px solid #95a5a6; background:#f9f9f9; border-radius:6px;">
-                                <div style="font-weight:600; margin-bottom:5px;">Abstain</div>
-                                <div style="color:#666; font-size:0.9em; margin-bottom:8px;">No Vote Cast</div>
-                                <div style="font-size:1.8em; font-weight:bold; color:#95a5a6;">${abstainVotes}</div>
-                                <div style="color:#999; font-size:0.85em;">${total > 0 ? ((abstainVotes/total)*100).toFixed(1) : 0}%</div>
-                            </div>
-                        ` : ''}
-                        
                         ${remaining > 0 ? `
                             <div style="padding:15px; border-left:4px solid #e0e0e0; background:#f9f9f9; border-radius:6px;">
                                 <div style="font-weight:600; margin-bottom:5px;">Not Yet Voted</div>
@@ -984,14 +1049,6 @@ function renderPositionAnalytics(positionId) {
                 const data = pos.candidates.map(c => c.votes);
                 const colors = pos.candidates.map(c => c.party_color);
                 
-                // Add abstain to chart if present
-                if(abstainVotes > 0) {
-                    labels.push('Abstain');
-                    data.push(abstainVotes);
-                    colors.push('#95a5a6');
-                }
-                
-                // Add remaining to chart if present
                 if(remaining > 0) {
                     labels.push('Remaining');
                     data.push(remaining);
