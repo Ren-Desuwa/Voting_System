@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS votes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     voter_id INT NOT NULL,
     position_id INT NOT NULL,
-    candidate_id INT NOT NULL,
+    candidate_id INT NULL,
     voted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (voter_id) REFERENCES voters(id) ON DELETE CASCADE,
     FOREIGN KEY (position_id) REFERENCES positions(id) ON DELETE CASCADE,

@@ -24,8 +24,8 @@ try {
         
         // Extract ID from "pos_1"
         $posId = str_replace('pos_', '', $posKey);
-        
-        $stmtVote->execute([$voterId, $posId, $candidateId]);
+        $valToInsert = ($candidateId === 'abstain') ? null : $candidateId;
+        $stmtVote->execute([$voterId, $posId, $valToInsert]); //
     }
 
     $pdo->commit();
