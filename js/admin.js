@@ -3,6 +3,7 @@ let positions = [];
 let parties = [];
 let analyticsData = null;
 let currentPartyId = null;
+let analyticsAutoRefresh = null;
  // For drag-and-drop position reordering
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -21,10 +22,24 @@ function switchMainTab(tab) {
     if(tab === 'setup') {
         document.querySelector('.nav-tab:first-child').classList.add('active');
         document.getElementById('setupView').style.display = 'grid';
+        
+        // Stop auto-refresh when leaving analytics
+        if(analyticsAutoRefresh) {
+            clearInterval(analyticsAutoRefresh);
+            analyticsAutoRefresh = null;
+        }
     } else {
         document.querySelector('.nav-tab:last-child').classList.add('active');
         document.getElementById('analyticsView').style.display = 'grid';
         loadDashboard();
+        
+        // Start auto-refresh when entering analytics
+        if(analyticsAutoRefresh) {
+            clearInterval(analyticsAutoRefresh);
+        }
+        analyticsAutoRefresh = setInterval(() => {
+            loadDashboard();
+        }, 3000); // Refresh every 3 seconds
     }
 }
 
