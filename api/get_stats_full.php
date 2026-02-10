@@ -46,11 +46,23 @@ try {
         $cStmt->execute([$pos['id']]);
         $candidates = $cStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Calculate total votes cast FOR THIS POSITION specifically
-        $totalVotesForPos = 0;
-        foreach($candidates as $c) {
-            $totalVotesForPos += $c['votes'];
-        }
+        // Calculate total votes cast FOR THIS POSITION specifically (including abstains)
+        $totalVotesStmt = $pdo->prepare("
+            SELECT COUNT(*) 
+            FROM votes 
+            WHERE position_id = ?
+        ");
+        $totalVotesStmt->execute([$pos['id']]);
+        $totalVotesForPos = (int)$totalVotesStmt->fetchColumn();
+
+        // Calculate ABSTAIN votes (votes where candidate_id IS NULL)
+        $abstainStmt = $pdo->prepare("
+            SELECT COUNT(*) 
+            FROM votes 
+            WHERE position_id = ? AND candidate_id IS NULL
+        ");
+        $abstainStmt->execute([$pos['id']]);
+        $abstainVotes = (int)$abstainStmt->fetchColumn();
 
         // Calculate Remaining (Total Enrolled - Votes cast for this position)
         $remaining = max(0, $totalEnrolled - $totalVotesForPos);
@@ -60,6 +72,7 @@ try {
             'title' => $pos['title'],
             'candidates' => $candidates,
             'total_votes' => $totalVotesForPos,
+            'abstain_votes' => $abstainVotes,
             'remaining' => $remaining
         ];
     }
