@@ -4,6 +4,7 @@ let parties = [];
 let analyticsData = null;
 let currentPartyId = null;
 let analyticsAutoRefresh = null;
+let lastDataHash = null;
  // For drag-and-drop position reordering
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -27,6 +28,7 @@ function switchMainTab(tab) {
         if(analyticsAutoRefresh) {
             clearInterval(analyticsAutoRefresh);
             analyticsAutoRefresh = null;
+            console.log('⏸️ Auto-refresh paused');
         }
     } else {
         document.querySelector('.nav-tab:last-child').classList.add('active');
@@ -39,7 +41,9 @@ function switchMainTab(tab) {
         }
         analyticsAutoRefresh = setInterval(() => {
             loadDashboard();
-        }, 3000); // Refresh every 3 seconds
+        }, 3000); // Check for updates every 3 seconds
+        
+        console.log('▶️ Auto-refresh started (3s interval)');
     }
 }
 
@@ -843,11 +847,36 @@ async function savePositionOrder() {
 async function loadDashboard() {
     try {
         const res = await fetch('api/get_stats_full.php');
-        analyticsData = await res.json();
-        renderAnalyticsSidebar();
-        renderMainDashboard();
+        const data = await res.json();
+        
+        if(!data.success) {
+            console.error('Failed to load analytics');
+            return;
+        }
+        
+        // Generate hash of new data
+        const newHash = generateDataHash(data);
+        
+        // Only update if data has changed
+        if(newHash !== lastDataHash) {
+            console.log('📊 New votes detected - updating display');
+            lastDataHash = newHash;
+            analyticsData = data;
+            
+            const navContainer = document.getElementById('analyticsPosList');
+            navContainer.innerHTML = data.positions.map((p, idx) => `
+                <div class="nav-item" onclick="renderPosStat(${idx})">
+                    ${p.title}
+                </div>
+            `).join('');
+            
+            renderMainDashboard();
+        } else {
+            console.log('✓ No changes - skipping refresh');
+        }
+        
     } catch(e) {
-        console.error('Failed to load analytics:', e);
+        console.error('Failed to load dashboard:', e);
     }
 }
 
@@ -1130,4 +1159,31 @@ function renderPosStat(index) {
             }
         }, 100);
     }
+}
+
+// Clean up auto-refresh on page unload
+window.addEventListener('beforeunload', () => {
+    if(analyticsAutoRefresh) {
+        clearInterval(analyticsAutoRefresh);
+    }
+});
+
+// Generate a hash/fingerprint of the current data to detect changes
+function generateDataHash(data) {
+    if(!data) return null;
+    
+    // Create a simple hash from vote counts and totals
+    let hash = '';
+    hash += data.global.votes_cast + '-';
+    hash += data.global.pending + '-';
+    
+    data.positions.forEach(pos => {
+        hash += pos.total_votes + '-';
+        hash += pos.abstain_votes + '-';
+        pos.candidates.forEach(c => {
+            hash += c.votes + '-';
+        });
+    });
+    
+    return hash;
 }
