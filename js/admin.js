@@ -931,10 +931,10 @@ function renderMainDashboard() {
         }
     }, 100);
 }
-
 function renderPosStat(index) {
     const pos = analyticsData.positions[index];
     const main = document.getElementById('analyticsMain');
+    const abstainVotes = pos.abstain_votes || 0;
     
     document.querySelectorAll('#analyticsPosList .nav-item').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('#analyticsPosList .nav-item')[index].classList.add('active');
@@ -958,9 +958,17 @@ function renderPosStat(index) {
                     <div style="font-size:3em; font-weight:bold; color:${c.party_color}; margin-bottom:10px;">${c.votes}</div>
                     <p style="color:#999;">Current Votes</p>
                     
+                    ${abstainVotes > 0 ? `
+                        <div style="margin-top:30px; padding:20px; background:#f9f9f9; border-radius:8px;">
+                            <div style="font-size:1.5em; font-weight:bold; color:#95a5a6; margin-bottom:5px;">${abstainVotes}</div>
+                            <div style="color:#666;">Abstain Votes</div>
+                        </div>
+                    ` : ''}
+
                     <div style="margin-top:30px;">
                         <div style="height:20px; background:#e0e0e0; border-radius:10px; overflow:hidden; display:flex;">
                             <div style="width:${total > 0 ? (c.votes/total)*100 : 0}%; background:${c.party_color};"></div>
+                            ${abstainVotes > 0 ? `<div style="width:${total > 0 ? (abstainVotes/total)*100 : 0}%; background:#95a5a6;"></div>` : ''}
                         </div>
                         <p style="margin-top:10px; color:#666;">${remaining} voters remaining</p>
                     </div>
@@ -978,6 +986,11 @@ function renderPosStat(index) {
                         <div style="width:${total > 0 ? (c1.votes/total)*100 : 0}%; background:${c1.party_color}; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">
                             ${c1.votes}
                         </div>
+                        ${abstainVotes > 0 ? `
+                            <div style="width:${total > 0 ? (abstainVotes/total)*100 : 0}%; background:#95a5a6; display:flex; align-items:center; justify-content:center; color:white; font-size:0.9em;">
+                                ${abstainVotes} Abstain
+                            </div>
+                        ` : ''}
                         <div style="width:${total > 0 ? (remaining/total)*100 : 0}%; background:#e0e0e0; display:flex; align-items:center; justify-content:center; color:#666; font-size:0.9em;">
                             ${remaining} left
                         </div>
@@ -1007,6 +1020,13 @@ function renderPosStat(index) {
                             <p style="color:#999; font-size:0.9em;">${total > 0 ? ((c2.votes/total)*100).toFixed(1) : 0}%</p>
                         </div>
                     </div>
+                    
+                    ${abstainVotes > 0 ? `
+                        <div style="margin-top:30px; padding:20px; background:#f9f9f9; border-radius:8px; text-align:center;">
+                            <div style="font-size:1.5em; font-weight:bold; color:#95a5a6; margin-bottom:5px;">${abstainVotes}</div>
+                            <div style="color:#666;">Abstain Votes (${total > 0 ? ((abstainVotes/total)*100).toFixed(1) : 0}%)</div>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -1029,6 +1049,16 @@ function renderPosStat(index) {
                                 <div style="color:#999; font-size:0.85em;">${total > 0 ? ((c.votes/total)*100).toFixed(1) : 0}%</div>
                             </div>
                         `).join('')}
+                        
+                        ${abstainVotes > 0 ? `
+                            <div style="padding:15px; border-left:4px solid #95a5a6; background:#f9f9f9; border-radius:6px;">
+                                <div style="font-weight:600; margin-bottom:5px;">Abstain</div>
+                                <div style="color:#666; font-size:0.9em; margin-bottom:8px;">No Vote Cast</div>
+                                <div style="font-size:1.8em; font-weight:bold; color:#95a5a6;">${abstainVotes}</div>
+                                <div style="color:#999; font-size:0.85em;">${total > 0 ? ((abstainVotes/total)*100).toFixed(1) : 0}%</div>
+                            </div>
+                        ` : ''}
+                        
                         ${remaining > 0 ? `
                             <div style="padding:15px; border-left:4px solid #e0e0e0; background:#f9f9f9; border-radius:6px;">
                                 <div style="font-weight:600; margin-bottom:5px;">Not Yet Voted</div>
@@ -1048,6 +1078,12 @@ function renderPosStat(index) {
                 const labels = pos.candidates.map(c => c.full_name);
                 const data = pos.candidates.map(c => c.votes);
                 const colors = pos.candidates.map(c => c.party_color);
+                
+                if(abstainVotes > 0) {
+                    labels.push('Abstain');
+                    data.push(abstainVotes);
+                    colors.push('#95a5a6');
+                }
                 
                 if(remaining > 0) {
                     labels.push('Remaining');
