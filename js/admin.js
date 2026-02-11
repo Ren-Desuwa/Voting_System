@@ -184,6 +184,16 @@ async function renderSettingsMode() {
                     <div id="quickStatsArea">
                         <p style="color:#999;">Loading stats...</p>
                     </div>
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px dashed #eee;">
+                        <h4 style="color: #c0392b; margin-bottom: 10px; font-size: 0.9em; text-transform: uppercase;">⚠️ Danger Zone</h4>
+                        <button id="finishElectionBtn" type="button" onclick="finishElection()" 
+                            style="width:100%; padding:15px; background: linear-gradient(135deg, #c0392b 0%, #a93226 100%); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(192, 57, 43, 0.3); transition: all 0.2s;">
+                            🏁 FINISH ELECTION
+                        </button>
+                        <p style="font-size: 0.8em; color: #999; margin-top: 8px; text-align: center;">
+                            Seals database & generates results.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -199,84 +209,117 @@ async function renderSettingsMode() {
     initializePositionDragAndDrop();
 }
 
+// ==========================================
+// UPDATED NETWORK INFO & COPY FUNCTIONS
+// ==========================================
 async function loadTailscaleUrl() {
     const urlDisplay = document.getElementById('tailscaleUrlDisplay');
     const statusDisplay = document.getElementById('tailscaleStatus');
-    const copyBtn = document.getElementById('copyUrlBtn');
-
+    
     // 1. Show Loading State
-    if (urlDisplay) urlDisplay.innerHTML = '<span style="opacity: 0.7;">Fetching URL...</span>';
+    if (urlDisplay) urlDisplay.innerHTML = '<div style="opacity:0.7; padding:10px;">🔍 Scanning Network...</div>';
 
     try {
-        // 2. Fetch the dynamic info from our PHP script
-        // Add timestamp to prevent browser caching
+        // 2. Fetch connection info
         const res = await fetch('api/get_tailscale_info.php?t=' + new Date().getTime());
         const data = await res.json();
 
-        if (data.success && data.url) {
-            // SUCCESS: We found the real dynamic URL
-            urlDisplay.innerHTML = `<strong>${data.url}</strong>`;
+        // 3. Prepare Variables
+        const remoteUrl = data.url || "Unavailable";
+        // Assume port 8080 for local if not specified
+        const localUrl = data.lan_ip ? `http://${data.lan_ip}:8080` : "Unavailable";
+        
+        // 4. Build Side-by-Side HTML (Flexbox)
+        let html = `
+        <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: stretch;">
             
-            statusDisplay.innerHTML = `✅ ${data.message}`; // "Online: https://..."
-            statusDisplay.style.color = "#d1fae5"; // Light green text
-            
-            // Enable the copy button and save the URL globally
-            copyBtn.disabled = false;
-            window.tailscaleUrl = data.url; 
+            <div style="flex: 1; min-width: 250px; background: rgba(255,255,255,0.15); border-radius: 8px; padding: 12px; border-left: 4px solid #a5f3fc; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="color: #a5f3fc; font-size: 0.75em; text-transform: uppercase; font-weight:bold; letter-spacing:1px;">🌍 Remote / Internet</span>
+                    ${data.url ? 
+                        `<button onclick="copyTextToClipboard('${remoteUrl}', this)" style="background:white; color:#0891b2; border:none; padding:4px 10px; border-radius:4px; font-size:0.75em; cursor:pointer; font-weight:bold; transition:all 0.2s;">COPY</button>` 
+                        : ''}
+                </div>
+                <div style="font-family:'Courier New', monospace; font-weight:bold; font-size:0.95em; word-break:break-all; color:white;">
+                    ${remoteUrl}
+                </div>
+            </div>
+
+            <div style="flex: 1; min-width: 250px; background: rgba(255,255,255,0.15); border-radius: 8px; padding: 12px; border-left: 4px solid #bef264; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="color: #bef264; font-size: 0.75em; text-transform: uppercase; font-weight:bold; letter-spacing:1px;">🏠 Local LAN (Wi-Fi)</span>
+                    ${data.lan_ip ? 
+                        `<button onclick="copyTextToClipboard('${localUrl}', this)" style="background:white; color:#65a30d; border:none; padding:4px 10px; border-radius:4px; font-size:0.75em; cursor:pointer; font-weight:bold; transition:all 0.2s;">COPY</button>` 
+                        : ''}
+                </div>
+                <div style="font-family:'Courier New', monospace; font-weight:bold; font-size:0.95em; word-break:break-all; color:white;">
+                    ${localUrl}
+                </div>
+            </div>
+
+        </div>`;
+
+        // 5. Render
+        urlDisplay.innerHTML = html;
+
+        // 6. Update Status Text
+        if (data.url) {
+            statusDisplay.innerHTML = "✅ System Online (Remote + Local)";
+            statusDisplay.style.color = "#d1fae5";
         } else {
-            // FAILURE: File not found or Tailscale not running
-            urlDisplay.innerHTML = `<span style="opacity: 0.7;">URL Unavailable</span>`;
-            statusDisplay.innerHTML = `⚠️ ${data.message || 'Run "Refresh Status" command'}`;
-            statusDisplay.style.color = "#fca5a5"; // Light red text
-            copyBtn.disabled = true;
+            statusDisplay.innerHTML = "⚠️ LAN Only (Remote Offline)";
+            statusDisplay.style.color = "#fef08a"; 
         }
 
     } catch (e) {
-        // ERROR: Network or JSON parse error
-        console.error("Tailscale check failed:", e);
-        if (urlDisplay) urlDisplay.innerHTML = '<span style="color: #fca5a5;">Connection Error</span>';
-        if (statusDisplay) statusDisplay.innerHTML = '❌ Server API not responding';
+        console.error("Network Error:", e);
+        urlDisplay.innerHTML = '<div style="color:#fca5a5;">❌ Connection Error</div>';
     }
 }
 
-function copyTailscaleUrl() {
-    const url = window.tailscaleUrl;
-    
-    if (!url) {
-        alert('No URL available to copy yet. Please wait for Tailscale to connect.');
-        return;
-    }
-    
-    // Copy to clipboard
-    navigator.clipboard.writeText(url).then(() => {
-        const btn = document.getElementById('copyUrlBtn');
-        const originalText = btn.innerHTML;
-        
-        btn.innerHTML = '✓ Copied!';
-        btn.style.background = '#10b981';
-        btn.style.color = 'white';
-        
-        setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.style.background = 'white';
-            btn.style.color = '#0891b2';
-        }, 2000);
+// GENERIC COPY FUNCTION (Replaces the old copyTailscaleUrl)
+// Works for both Remote and Local buttons
+function copyTextToClipboard(text, btnElementOrId) {
+    if (!text) return;
+
+    // Handle button element (ID string or actual DOM element)
+    let btn = (typeof btnElementOrId === 'string') ? document.getElementById(btnElementOrId) : btnElementOrId;
+    let originalText = btn ? btn.innerHTML : "Copy";
+    let originalBg = btn ? btn.style.background : "";
+
+    navigator.clipboard.writeText(text).then(() => {
+        if (btn) {
+            btn.innerHTML = '✓ Copied!';
+            btn.style.background = '#10b981'; // Green
+            btn.style.borderColor = '#10b981';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = originalBg;
+                btn.style.borderColor = '';
+            }, 2000);
+        } else {
+            alert("Copied: " + text);
+        }
     }).catch(err => {
         // Fallback for older browsers
         const textArea = document.createElement('textarea');
-        textArea.value = url;
+        textArea.value = text;
         textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
+        textArea.style.left = '-9999px';
         document.body.appendChild(textArea);
         textArea.select();
-        
         try {
             document.execCommand('copy');
-            alert('URL copied to clipboard:\n\n' + url);
+            if(btn) {
+                btn.innerHTML = '✓ Copied!';
+                setTimeout(() => btn.innerHTML = originalText, 2000);
+            } else {
+                alert('Copied: ' + text);
+            }
         } catch (e) {
-            alert('Could not copy URL. Please copy manually:\n\n' + url);
+            prompt("Copy manually:", text);
         }
-        
         document.body.removeChild(textArea);
     });
 }
@@ -974,8 +1017,7 @@ function renderMainDashboard() {
             });
         }
     }, 100);
-}
-function renderPosStat(index) {
+}function renderPosStat(index) {
     const pos = analyticsData.positions[index];
     const main = document.getElementById('analyticsMain');
     const abstainVotes = pos.abstain_votes || 0;
@@ -988,6 +1030,7 @@ function renderPosStat(index) {
     const remaining = pos.remaining || 0;
     const total = totalVotes + remaining;
     
+    // VIEW 1: SINGLE CANDIDATE
     if(candidateCount === 1) {
         const c = pos.candidates[0];
         main.innerHTML = `
@@ -1020,61 +1063,83 @@ function renderPosStat(index) {
             </div>
         `;
     }
+    // VIEW 2: TWO CANDIDATES (TUG OF WAR)
     else if(candidateCount === 2) {
         const [c1, c2] = pos.candidates;
+        
+        // --- LOGIC FOR TUG OF WAR BAR ---
+        // We calculate percentages based ONLY on votes cast (ignoring remaining)
+        const totalCast = c1.votes + c2.votes + abstainVotes;
+        
+        let w1 = 50; // Default start (50%)
+        let wA = 0;  // Default start (0%)
+        let w2 = 50; // Default start (50%)
+        
+        if (totalCast > 0) {
+            w1 = (c1.votes / totalCast) * 100;
+            wA = (abstainVotes / totalCast) * 100;
+            w2 = (c2.votes / totalCast) * 100;
+        }
+
         main.innerHTML = `
             <div style="padding:30px;">
                 <h2 style="margin-bottom:20px;">${pos.title}</h2>
                 <div style="background:white; padding:30px; border-radius:12px;">
-                    <div style="height:40px; border-radius:10px; overflow:hidden; display:flex; margin-bottom:30px;">
-                        <div style="width:${total > 0 ? (c1.votes/total)*100 : 0}%; background:${c1.party_color}; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">
-                            ${c1.votes}
+                    
+                    <div style="text-align:center; margin-bottom:15px; color:#666; font-size:0.9em;">
+                        <strong>${remaining}</strong> voters remaining / <strong>${total}</strong> total
+                    </div>
+
+                    <div style="height:50px; border-radius:25px; overflow:hidden; display:flex; margin-bottom:40px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); border: 2px solid #fff;">
+                        
+                        <div style="width:${w1}%; background:${c1.party_color}; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; transition: width 0.5s ease; position:relative;">
+                             ${w1 > 10 ? `<span style="text-shadow:0 1px 2px rgba(0,0,0,0.3);">${Math.round(w1)}%</span>` : ''}
                         </div>
-                        ${abstainVotes > 0 ? `
-                            <div style="width:${total > 0 ? (abstainVotes/total)*100 : 0}%; background:#95a5a6; display:flex; align-items:center; justify-content:center; color:white; font-size:0.9em;">
-                                ${abstainVotes} Abstain
-                            </div>
-                        ` : ''}
-                        <div style="width:${total > 0 ? (remaining/total)*100 : 0}%; background:#e0e0e0; display:flex; align-items:center; justify-content:center; color:#666; font-size:0.9em;">
-                            ${remaining} left
+                        
+                        <div style="width:${wA}%; background:#95a5a6; display:flex; align-items:center; justify-content:center; color:white; font-size:0.9em; transition: width 0.5s ease; border-left:1px solid rgba(255,255,255,0.3); border-right:1px solid rgba(255,255,255,0.3);">
+                             ${wA > 5 ? '⊘' : ''}
                         </div>
-                        <div style="width:${total > 0 ? (c2.votes/total)*100 : 0}%; background:${c2.party_color}; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">
-                            ${c2.votes}
+
+                        <div style="width:${w2}%; background:${c2.party_color}; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; transition: width 0.5s ease;">
+                             ${w2 > 10 ? `<span style="text-shadow:0 1px 2px rgba(0,0,0,0.3);">${Math.round(w2)}%</span>` : ''}
                         </div>
                     </div>
                     
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:30px;">
-                        <div style="text-align:center; padding:20px; border:2px solid ${c1.party_color}; border-radius:10px;">
-                            <div style="width:80px; height:80px; margin:0 auto 15px; background:${c1.party_color}; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:1.8em;">
+                    <div style="display:grid; grid-template-columns: 1fr 0.6fr 1fr; gap:20px; align-items:start;">
+                        
+                        <div style="text-align:center; padding:25px; border-top:5px solid ${c1.party_color}; border-radius:12px; background: #f8f9fa; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                            <div style="width:90px; height:90px; margin:0 auto 15px; background:${c1.party_color}; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:1.8em; border: 4px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
                                 ${c1.photo_url ? `<img src="${c1.photo_url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : '👤'}
                             </div>
                             <h3 style="font-size:1.3em; margin-bottom:5px;">${c1.full_name}</h3>
-                            <p style="color:#666; margin-bottom:10px;">${c1.party_name}</p>
-                            <div style="font-size:2.5em; font-weight:bold; color:${c1.party_color};">${c1.votes}</div>
-                            <p style="color:#999; font-size:0.9em;">${total > 0 ? ((c1.votes/total)*100).toFixed(1) : 0}%</p>
+                            <p style="color:#666; margin-bottom:15px; font-weight:bold; color:${c1.party_color}; font-size:0.9em;">${c1.party_name}</p>
+                            <div style="font-size:3em; font-weight:bold; color:${c1.party_color}; line-height:1;">${c1.votes}</div>
+                            <p style="color:#999; font-size:0.85em; margin-top:5px;">VOTES</p>
                         </div>
                         
-                        <div style="text-align:center; padding:20px; border:2px solid ${c2.party_color}; border-radius:10px;">
-                            <div style="width:80px; height:80px; margin:0 auto 15px; background:${c2.party_color}; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:1.8em;">
+                        <div style="text-align:center; padding:20px; border-radius:12px; opacity:0.8; margin-top: 15px;">
+                            <div style="width:50px; height:50px; background:#95a5a6; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:1.5em; margin:0 auto 10px;">⊘</div>
+                            <div style="font-size:2em; font-weight:bold; color:#7f8c8d; line-height:1;">${abstainVotes}</div>
+                            <p style="color:#aaa; font-size:0.8em; margin-top:5px;">ABSTAINED</p>
+                        </div>
+                        
+                        <div style="text-align:center; padding:25px; border-top:5px solid ${c2.party_color}; border-radius:12px; background: #f8f9fa; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                            <div style="width:90px; height:90px; margin:0 auto 15px; background:${c2.party_color}; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:1.8em; border: 4px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
                                 ${c2.photo_url ? `<img src="${c2.photo_url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : '👤'}
                             </div>
                             <h3 style="font-size:1.3em; margin-bottom:5px;">${c2.full_name}</h3>
-                            <p style="color:#666; margin-bottom:10px;">${c2.party_name}</p>
-                            <div style="font-size:2.5em; font-weight:bold; color:${c2.party_color};">${c2.votes}</div>
-                            <p style="color:#999; font-size:0.9em;">${total > 0 ? ((c2.votes/total)*100).toFixed(1) : 0}%</p>
+                            <p style="color:#666; margin-bottom:15px; font-weight:bold; color:${c2.party_color}; font-size:0.9em;">${c2.party_name}</p>
+                            <div style="font-size:3em; font-weight:bold; color:${c2.party_color}; line-height:1;">${c2.votes}</div>
+                            <p style="color:#999; font-size:0.85em; margin-top:5px;">VOTES</p>
                         </div>
+
                     </div>
-                    
-                    ${abstainVotes > 0 ? `
-                        <div style="margin-top:30px; padding:20px; background:#f9f9f9; border-radius:8px; text-align:center;">
-                            <div style="font-size:1.5em; font-weight:bold; color:#95a5a6; margin-bottom:5px;">${abstainVotes}</div>
-                            <div style="color:#666;">Abstain Votes (${total > 0 ? ((abstainVotes/total)*100).toFixed(1) : 0}%)</div>
-                        </div>
-                    ` : ''}
+
                 </div>
             </div>
         `;
     }
+    // VIEW 3: MULTI-CANDIDATE (3+)
     else {
         main.innerHTML = `
             <div style="padding:30px;">
@@ -1186,4 +1251,38 @@ function generateDataHash(data) {
     });
     
     return hash;
+}
+
+// === ADD TO BOTTOM OF js/admin.js ===
+
+async function finishElection() {
+    if (!confirm("⚠️ FINAL CONFIRMATION ⚠️\n\nAre you sure you want to CLOSE this election?\n\n1. The current database will be SEALED (Read-Only).\n2. No new votes can be accepted.\n3. You will be redirected to the Official Winners Certificate.\n\nThis cannot be undone.")) {
+        return;
+    }
+
+    const btn = document.getElementById('finishElectionBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "⏳ Sealing...";
+    btn.disabled = true;
+
+    try {
+        const res = await fetch('api/seal_election.php', { method: 'POST' });
+        const data = await res.json();
+
+        if (data.success) {
+            btn.innerHTML = "✅ DONE";
+            btn.style.background = "#28a745"; 
+            setTimeout(() => {
+                window.location.href = data.redirect; // Go to certificate page
+            }, 1000);
+        } else {
+            alert("Error: " + data.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    } catch (e) {
+        alert("Network Error: " + e.message);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
 }

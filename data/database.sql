@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS parties (
 INSERT INTO parties (id, name, slogan, color, logo_url) VALUES 
 (1, 'SINAG', 'Lighting the Path Forward', '#f1c40f', NULL),
 (2, 'IGNITE', 'Spark the Change', '#e74c3c', 'assets/candidates/Ignite/GROUP PHOTO.png'),
-(3, 'Independent', 'Voice of the People', '#95a5a6', NULL)
+(3, 'Independent', 'Voice of the People', '#9b59b6', NULL)
 ON DUPLICATE KEY UPDATE name=VALUES(name);
 
 -- 5. Candidates Table

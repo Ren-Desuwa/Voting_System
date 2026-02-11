@@ -21,7 +21,7 @@ services:
       MYSQL_DATABASE: voting_system
     volumes:
       - ./data/database.sql:/docker-entrypoint-initdb.d/init.sql
-      - db_data:/var/lib/mysql
+      - ./mysql_sealed_data:/var/lib/mysql
     networks:
       - voting-network
 
