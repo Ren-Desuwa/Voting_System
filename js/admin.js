@@ -5,6 +5,10 @@ let analyticsData = null;
 let currentPartyId = null;
 let analyticsAutoRefresh = null;
 let lastDataHash = null;
+let electionControlRefreshInterval = null;
+
+// Global variable to track state and prevent unnecessary DOM rewrites
+let lastKnownStatus = null;
  // For drag-and-drop position reordering
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -12,11 +16,28 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPartyList();
     renderSettingsMode();
 });
+// Clean up interval when leaving the page or switching tabs
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && electionControlRefreshInterval) {
+        console.log('⏸️ Page hidden - pausing auto-refresh');
+        clearInterval(electionControlRefreshInterval);
+        electionControlRefreshInterval = null;
+    }
+});
 
 // ==========================================
 // TAB SWITCHING
 // ==========================================
+// Also stop auto-refresh when switching to other admin tabs
 function switchMainTab(tab) {
+    // Stop election control auto-refresh when switching tabs
+    if (electionControlRefreshInterval) {
+        clearInterval(electionControlRefreshInterval);
+        electionControlRefreshInterval = null;
+        console.log('⏸️ Switched tabs - stopping election control auto-refresh');
+    }
+    
+    // Continue with normal tab switching...
     document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.panel-content').forEach(el => el.style.display = 'none');
     
@@ -24,26 +45,26 @@ function switchMainTab(tab) {
         document.querySelector('.nav-tab:first-child').classList.add('active');
         document.getElementById('setupView').style.display = 'grid';
         
-        // Stop auto-refresh when leaving analytics
+        // Stop analytics auto-refresh when leaving analytics
         if(analyticsAutoRefresh) {
             clearInterval(analyticsAutoRefresh);
             analyticsAutoRefresh = null;
-            console.log('⏸️ Auto-refresh paused');
+            console.log('⏸️ Analytics auto-refresh paused');
         }
     } else {
         document.querySelector('.nav-tab:last-child').classList.add('active');
         document.getElementById('analyticsView').style.display = 'grid';
         loadDashboard();
         
-        // Start auto-refresh when entering analytics
+        // Start analytics auto-refresh when entering analytics
         if(analyticsAutoRefresh) {
             clearInterval(analyticsAutoRefresh);
         }
         analyticsAutoRefresh = setInterval(() => {
             loadDashboard();
-        }, 3000); // Check for updates every 3 seconds
+        }, 3000);
         
-        console.log('▶️ Auto-refresh started (3s interval)');
+        console.log('▶️ Analytics auto-refresh started (3s interval)');
     }
 }
 
@@ -1284,5 +1305,177 @@ async function finishElection() {
         alert("Network Error: " + e.message);
         btn.innerHTML = originalText;
         btn.disabled = false;
+    }
+}
+
+// Global variable to track state
+async function renderElectionControl() {
+    // 1. Sidebar Active State
+    const navElection = document.getElementById('nav-election');
+    if (navElection && !navElection.classList.contains('active')) {
+        document.querySelectorAll('.col-nav .nav-item').forEach(el => el.classList.remove('active'));
+        navElection.classList.add('active');
+    }
+
+    const container = document.getElementById('setupDynamicContent');
+    
+    // Check if panel exists to decide if we need a loading state
+    if (!document.getElementById('election-control-panel')) {
+        container.innerHTML = '<div style="padding:40px; text-align:center; color:#999;">Loading Control Room...</div>';
+    }
+
+    try {
+        const res = await fetch('api/manage_election.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'action=get_status'
+        });
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        const data = await res.json();
+        const currentStatus = data.status || 'not_started';
+
+        // --- CHECK: Only re-render if status changed OR if the panel is missing ---
+        const panelExists = document.getElementById('election-control-panel');
+        
+        if (currentStatus === lastKnownStatus && panelExists) {
+            console.log('📊 Status unchanged. Skipping re-render.');
+            return; 
+        }
+
+        // Update global tracker
+        lastKnownStatus = currentStatus;
+
+        // 2. UI Configuration
+        let config = {
+            'not_started': { color: '#f39c12', text: 'NOT STARTED', sub: 'Waiting for admin to open lines.' },
+            'active':      { color: '#27ae60', text: 'ACTIVE', sub: 'Voting is OPEN. Timestamps enabled.' },
+            'paused':      { color: '#c0392b', text: 'PAUSED', sub: 'Submissions are BLOCKED.' },
+            'ended':       { color: '#2c3e50', text: 'FINALIZED', sub: 'Election is OVER. Results generated.' }
+        }[currentStatus] || { color: '#7f8c8d', text: 'UNKNOWN', sub: '' };
+
+        // 3. Render UI (Clean version without Monitoring Badge)
+        container.innerHTML = `
+            <div id="election-control-panel" class="col-content" style="grid-column: 2 / 4; background: white; padding: 30px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2 style="margin:0;">🗳️ Election Control Room</h2>
+                    </div>
+
+                <div style="background:${config.color}; color:white; padding:30px; border-radius:12px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.1); margin-bottom:30px;">
+                    <div style="font-size:0.9em; opacity:0.9; letter-spacing:1px; text-transform:uppercase;">Current Status</div>
+                    <div style="font-size:2.5em; font-weight:bold; margin:5px 0;">${config.text}</div>
+                    <div style="font-size:1em; opacity:0.9;">${config.sub}</div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:20px;">
+                    <div style="border:2px solid #27ae60; border-radius:10px; padding:20px; text-align:center; opacity: ${currentStatus === 'ended' ? '0.5' : '1'}">
+                        <h3 style="color:#27ae60; margin-bottom:10px;">🟢 Start</h3>
+                        <p style="font-size:0.85em; color:#666; margin-bottom:15px;">Open voting lines</p>
+                        <button onclick="changeStatus('active')" ${currentStatus === 'ended' ? 'disabled' : ''} style="width:100%; background:#27ae60; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">
+                            ${currentStatus === 'active' ? 'RESUME' : 'START'}
+                        </button>
+                    </div>
+
+                    <div style="border:2px solid #f39c12; border-radius:10px; padding:20px; text-align:center; opacity: ${currentStatus !== 'active' ? '0.5' : '1'}">
+                        <h3 style="color:#f39c12; margin-bottom:10px;">⏸️ Pause</h3>
+                        <p style="font-size:0.85em; color:#666; margin-bottom:15px;">Block voters</p>
+                        <button onclick="changeStatus('paused')" ${currentStatus !== 'active' ? 'disabled' : ''} style="width:100%; background:#f39c12; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold;">
+                            PAUSE
+                        </button>
+                    </div>
+
+                    <div style="border:2px solid #c0392b; border-radius:10px; padding:20px; text-align:center; opacity: ${currentStatus === 'not_started' || currentStatus === 'ended' ? '0.5' : '1'}">
+                        <h3 style="color:#c0392b; margin-bottom:10px;">🏁 Finalize</h3>
+                        <p style="font-size:0.85em; color:#666; margin-bottom:15px;">Generate Results</p>
+                        <button onclick="changeStatus('ended')" ${currentStatus === 'not_started' || currentStatus === 'ended' ? 'disabled' : ''} style="width:100%; background:#c0392b; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold;">
+                            FINALIZE
+                        </button>
+                    </div>
+                </div>
+
+                <div style="margin-top:30px; padding:15px; background:#f8f9fa; border-radius:8px; border:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong>Public Page:</strong>
+                        <span style="color:#666; font-size:0.9em; margin-left:10px;">/election.html</span>
+                    </div>
+                    <a href="election.html" target="_blank" style="background:#3498db; color:white; text-decoration:none; padding:8px 15px; border-radius:6px; font-size:0.9em; font-weight:bold;">View Page ↗</a>
+                </div>
+            </div>
+        `;
+
+    } catch (error) {
+        console.error('❌ Error:', error);
+    }
+}
+async function changeStatus(newStatus) {
+    if(!confirm("⚠️ Change election status?\n\nThis will affect all voters immediately.\n\nContinue?")) {
+        return;
+    }
+
+    // STOP the auto-refresh immediately so it doesn't interfere
+    if (window.electionControlRefreshInterval) {
+        clearInterval(window.electionControlRefreshInterval);
+    }
+
+    // Show loading state on button
+    const buttons = document.querySelectorAll('button[onclick^="changeStatus"]');
+    buttons.forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+    });
+
+    try {
+        console.log("🔵 Sending request to update status...");
+
+        const res = await fetch('api/manage_election.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `action=update_status&status=${newStatus}`
+        });
+        
+        const data = await res.json();
+        
+        // --- 🔍 HERE ARE THE LOGS YOU ARE MISSING ---
+        if (data.debug) {
+            console.group("🔍 SERVER DEBUG INFO");
+            console.log("Action:", data.debug.action);
+            console.log("Target File:", data.debug.target_file);
+            console.log("Directory Writable?:", data.debug.directory_writable);
+            console.log("File Exists?:", data.debug.file_exists);
+            console.log("File Writable?:", data.debug.file_writable);
+            console.log("Write Status:", data.debug.write_status);
+            
+            if (data.debug.system_error) {
+                console.error("❌ SYSTEM ERROR:", data.debug.system_error);
+            }
+            console.groupEnd();
+        }
+        // --------------------------------------------
+
+        if(data.success) {
+            // Immediately refresh to show new status
+            await renderElectionControl(); 
+            
+            if(newStatus === 'ended') {
+                alert("✅ Election Finalized!\n\nResults have been generated.");
+            } else if(newStatus === 'active') {
+                alert("✅ Voting is now ACTIVE!");
+            } else if(newStatus === 'paused') {
+                alert("⏸️ Voting has been PAUSED.");
+            }
+        } else {
+            console.error("Server Error Data:", data);
+            throw new Error(data.error || 'Unknown error occurred');
+        }
+    } catch(error) {
+        console.error('❌ Error changing status:', error);
+        alert(`❌ Failed to change status\n\nError: ${error.message}\n\nPlease check the console (F12) for details.`);
+    } finally {
+        // Re-enable buttons regardless of success or failure
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        });
     }
 }

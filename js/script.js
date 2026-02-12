@@ -39,30 +39,56 @@ function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(pageId).classList.add('active');
 }
-
-function startVoting() {
-    // Check if data is loaded
+async function startVoting() {
+    // 1. UI Check
     if (positionKeys.length === 0) {
-        alert("Election data is still loading... please try again in a few seconds.");
-        loadBallot(); // Retry loading
+        alert("Election data is still loading...");
         return;
     }
-    
-    // Reset selections for the new voter
-    positionKeys.forEach(key => votes[key] = null);
-    
-    // Start at Step 1
-    currentStep = 1;
-    document.getElementById('votingUI').style.display = 'block';
-    
-    // Shuffle candidates once per voter session (Optional fairness)
-    positionKeys.forEach(key => {
-        if(candidates[key]) {
-            shuffleArray(candidates[key]);
-        }
-    });
 
-    showVotingPage();
+    const token = localStorage.getItem('session_token');
+
+    try {
+        // 2. Validate Session and Status in parallel
+        const [statusRes, sessionRes] = await Promise.all([
+            fetch('api/manage_election.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'action=get_status'
+            }),
+            fetch('api/session_check.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ token: token })
+            })
+        ]);
+
+        const statusData = await statusRes.json();
+        const sessionData = await sessionRes.json();
+
+        // 3. Logic Gate
+        if (statusData.status !== 'active') {
+            alert("Voting is currently " + statusData.status);
+            window.location.href = 'election.html';
+            return;
+        }
+
+        if (!sessionData.valid) {
+            alert("⚠️ Security Alert: Session is no longer valid. The PIN may have changed.");
+            location.reload(); // Redirects to PIN entry
+            return;
+        }
+
+        // 4. Proceed to voting UI if both pass
+        document.getElementById('pageHome').classList.remove('active');
+        document.getElementById('votingUI').style.display = 'block';
+        document.getElementById('votingPage').classList.add('active');
+        renderCandidates();
+        updateUI();
+
+    } catch (e) {
+        console.error("Auth check failed", e);
+    }
 }
 
 function showVotingPage() {

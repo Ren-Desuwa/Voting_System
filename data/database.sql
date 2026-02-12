@@ -17,7 +17,10 @@ CREATE TABLE IF NOT EXISTS settings (
 INSERT INTO settings (setting_key, setting_value) VALUES 
 ('total_voters', '500'),
 ('daily_pin', '1234'),
-('pin_updated_date', CURDATE())
+('pin_updated_date', CURDATE()),
+('election_status', 'not_started'), -- Options: not_started, active, paused, ended
+('election_start_time', '2026-01-01 00:00:00'),
+('election_end_time', '2099-12-31 23:59:59')
 ON DUPLICATE KEY UPDATE setting_key=setting_key;
 
 -- 2. Sessions Table
