@@ -3,24 +3,33 @@
     <head>
         <meta charset='UTF-8'>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-        <title>ELECTION ACTIVE</title>
-        <meta http-equiv='refresh' content='10'>
+        <title>Results Pending</title>
         <style>
-            body { display: flex; justify-content: center; align-items: center; min-height: 100vh; margin:0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: 'Segoe UI', sans-serif; }
-            .card { background: white; padding: 60px 40px; border-radius: 20px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 500px; width:90%; border-top: 8px solid #27ae60; }
-            h1 { color: #27ae60; margin: 15px 0; font-size: 2em; }
-            p { color: #666; font-size: 1.1em; line-height: 1.6; }
-            .icon { font-size: 5em; display:block; margin-bottom: 20px; animation: pulse 2s infinite; }
-            @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+            body { 
+                display: flex; justify-content: center; align-items: center; 
+                min-height: 100vh; margin: 0; 
+                background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); 
+                font-family: 'Segoe UI', sans-serif; 
+                color: #2c3e50;
+            }
+            .container { 
+                text-align: center; background: white; 
+                padding: 60px 40px; border-radius: 20px; 
+                box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+                max-width: 450px; width: 90%;
+            }
+            .icon { font-size: 5em; margin-bottom: 20px; display: inline-block; animation: float 3s ease-in-out infinite; }
+            h1 { margin: 10px 0; font-size: 1.8em; }
+            p { color: #7f8c8d; line-height: 1.6; }
+            @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         </style>
     </head>
     <body>
-        <div class='card'>
-            <div class='icon'>✅</div>
-            <h1>ELECTION ACTIVE</h1>
-            <p>Voting is currently ongoing.</p>
-            <p style='font-size:0.8em; margin-top:20px; color:#ccc'>Last Updated: 05:57:09</p>
+        <div class='container'>
+            <div class='icon'>🗳️</div>
+            <h1>Results Pending</h1>
+            <p>The election has not yet concluded or the results have not been officially released.</p>
+            <p style='font-size:0.85em; margin-top:30px; color:#bdc3c7;'>Please check back later.</p>
         </div>
     </body>
     </html>
-    <!-- something -->

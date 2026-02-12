@@ -128,9 +128,6 @@ async function renderSettingsMode() {
                     <div style="flex: 1; font-family: 'Courier New', monospace; font-size: 1.1em; word-break: break-all;" id="tailscaleUrlDisplay">
                         <span style="opacity: 0.7;">Loading...</span>
                     </div>
-                    <button onclick="copyTailscaleUrl()" id="copyUrlBtn" style="background: white; color: #0891b2; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.3s;">
-                        📋 Copy
-                    </button>
                 </div>
                 <div style="margin-top: 15px; font-size: 0.85em; opacity: 0.9;" id="tailscaleStatus">
                     Checking Tailscale connection...
@@ -207,16 +204,6 @@ async function renderSettingsMode() {
                     <h3>Quick Info</h3>
                     <div id="quickStatsArea">
                         <p style="color:#999;">Loading stats...</p>
-                    </div>
-                    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px dashed #eee;">
-                        <h4 style="color: #c0392b; margin-bottom: 10px; font-size: 0.9em; text-transform: uppercase;">⚠️ Danger Zone</h4>
-                        <button id="finishElectionBtn" type="button" onclick="finishElection()" 
-                            style="width:100%; padding:15px; background: linear-gradient(135deg, #c0392b 0%, #a93226 100%); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(192, 57, 43, 0.3); transition: all 0.2s;">
-                            🏁 FINISH ELECTION
-                        </button>
-                        <p style="font-size: 0.8em; color: #999; margin-top: 8px; text-align: center;">
-                            Seals database & generates results.
-                        </p>
                     </div>
                 </div>
             </div>
@@ -1041,7 +1028,9 @@ function renderMainDashboard() {
             });
         }
     }, 100);
-}function renderPosStat(index) {
+}
+
+function renderPosStat(index) {
     const pos = analyticsData.positions[index];
     const main = document.getElementById('analyticsMain');
     const abstainVotes = pos.abstain_votes || 0;
@@ -1373,52 +1362,55 @@ async function renderElectionControl(forceSync = false) {
 
         // 5. Render UI
         container.innerHTML = `
-            <div id="election-control-panel" class="col-content" style="grid-column: 2 / 4; background: white; padding: 30px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h2 style="margin:0;">🗳️ Election Control Room</h2>
-                </div>
+    <div id="election-control-panel" class="col-content" style="grid-column: 2 / 4; background: white; padding: 30px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="margin:0;">🗳️ Election Control Room</h2>
+            <button onclick="changeStatus('not_started')" style="background:transparent; border:1px solid #95a5a6; color:#7f8c8d; padding:8px 15px; border-radius:6px; cursor:pointer; font-size:0.85em;">
+                ↺ Reset to Pending
+            </button>
+        </div>
 
-                <div style="background:${config.color}; color:white; padding:30px; border-radius:12px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.1); margin-bottom:30px;">
-                    <div style="font-size:0.9em; opacity:0.9; letter-spacing:1px; text-transform:uppercase;">Current Status</div>
-                    <div style="font-size:2.5em; font-weight:bold; margin:5px 0;">${config.text}</div>
-                    <div style="font-size:1em; opacity:0.9;">${config.sub}</div>
-                </div>
+        <div style="background:${config.color}; color:white; padding:30px; border-radius:12px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.1); margin-bottom:30px;">
+            <div style="font-size:0.9em; opacity:0.9; letter-spacing:1px; text-transform:uppercase;">Current Status</div>
+            <div style="font-size:2.5em; font-weight:bold; margin:5px 0;">${config.text}</div>
+            <div style="font-size:1em; opacity:0.9;">${config.sub}</div>
+        </div>
 
-                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:20px;">
-                    <div style="border:2px solid #27ae60; border-radius:10px; padding:20px; text-align:center; opacity: ${currentStatus === 'ended' ? '0.5' : '1'}">
-                        <h3 style="color:#27ae60; margin-bottom:10px;">🟢 Start</h3>
-                        <p style="font-size:0.85em; color:#666; margin-bottom:15px;">Open voting lines</p>
-                        <button onclick="changeStatus('active')" ${currentStatus === 'ended' ? 'disabled' : ''} style="width:100%; background:#27ae60; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">
-                            ${currentStatus === 'active' ? 'RESUME' : 'START'}
-                        </button>
-                    </div>
-
-                    <div style="border:2px solid #f39c12; border-radius:10px; padding:20px; text-align:center; opacity: ${currentStatus !== 'active' ? '0.5' : '1'}">
-                        <h3 style="color:#f39c12; margin-bottom:10px;">⏸️ Pause</h3>
-                        <p style="font-size:0.85em; color:#666; margin-bottom:15px;">Block voters</p>
-                        <button onclick="changeStatus('paused')" ${currentStatus !== 'active' ? 'disabled' : ''} style="width:100%; background:#f39c12; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold;">
-                            PAUSE
-                        </button>
-                    </div>
-
-                    <div style="border:2px solid #c0392b; border-radius:10px; padding:20px; text-align:center; opacity: ${currentStatus === 'not_started' || currentStatus === 'ended' ? '0.5' : '1'}">
-                        <h3 style="color:#c0392b; margin-bottom:10px;">🏁 Finalize</h3>
-                        <p style="font-size:0.85em; color:#666; margin-bottom:15px;">Generate Results</p>
-                        <button onclick="changeStatus('ended')" ${currentStatus === 'not_started' || currentStatus === 'ended' ? 'disabled' : ''} style="width:100%; background:#c0392b; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold;">
-                            FINALIZE
-                        </button>
-                    </div>
-                </div>
-
-                <div style="margin-top:30px; padding:15px; background:#f8f9fa; border-radius:8px; border:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <strong>Public Page:</strong>
-                        <span style="color:#666; font-size:0.9em; margin-left:10px;">/election.html</span>
-                    </div>
-                    <a href="election.html" target="_blank" style="background:#3498db; color:white; text-decoration:none; padding:8px 15px; border-radius:6px; font-size:0.9em; font-weight:bold;">View Page ↗</a>
-                </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:20px;">
+            <div style="border:2px solid #27ae60; border-radius:10px; padding:20px; text-align:center; opacity: ${currentStatus === 'ended' ? '0.5' : '1'}">
+                <h3 style="color:#27ae60; margin-bottom:10px;">🟢 Start</h3>
+                <p style="font-size:0.85em; color:#666; margin-bottom:15px;">Open voting lines</p>
+                <button onclick="changeStatus('active')" ${currentStatus === 'ended' ? 'disabled' : ''} style="width:100%; background:#27ae60; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">
+                    ${currentStatus === 'active' ? 'RESUME' : 'START'}
+                </button>
             </div>
-        `;
+
+            <div style="border:2px solid #f39c12; border-radius:10px; padding:20px; text-align:center; opacity: ${currentStatus !== 'active' ? '0.5' : '1'}">
+                <h3 style="color:#f39c12; margin-bottom:10px;">⏸️ Pause</h3>
+                <p style="font-size:0.85em; color:#666; margin-bottom:15px;">Block voters</p>
+                <button onclick="changeStatus('paused')" ${currentStatus !== 'active' ? 'disabled' : ''} style="width:100%; background:#f39c12; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold;">
+                    PAUSE
+                </button>
+            </div>
+
+            <div style="border:2px solid #c0392b; border-radius:10px; padding:20px; text-align:center; opacity: ${currentStatus === 'not_started' || currentStatus === 'ended' ? '0.5' : '1'}">
+                <h3 style="color:#c0392b; margin-bottom:10px;">🏁 Finalize</h3>
+                <p style="font-size:0.85em; color:#666; margin-bottom:15px;">Generate Results</p>
+                <button onclick="changeStatus('ended')" ${currentStatus === 'not_started' || currentStatus === 'ended' ? 'disabled' : ''} style="width:100%; background:#c0392b; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold;">
+                    FINALIZE
+                </button>
+            </div>
+        </div>
+        
+        <div style="margin-top:30px; padding:15px; background:#f8f9fa; border-radius:8px; border:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <strong>Public Page:</strong>
+                <span style="color:#666; font-size:0.9em; margin-left:10px;">/election.html</span>
+            </div>
+            <a href="election.html" target="_blank" style="background:#3498db; color:white; text-decoration:none; padding:8px 15px; border-radius:6px; font-size:0.9em; font-weight:bold;">View Page ↗</a>
+        </div>
+    </div>
+`;
 
     } catch (error) {
         console.error('❌ Error:', error);

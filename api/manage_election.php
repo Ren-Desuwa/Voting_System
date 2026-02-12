@@ -10,7 +10,6 @@ require 'generate_results.php';
 $action = $_POST['action'] ?? '';
 $targetFile = dirname(__DIR__) . '/election.html';
 
-// Init response with Debug info
 $response = [
     'success' => false, 
     'debug' => [
@@ -25,25 +24,24 @@ try {
         $stmt = $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'election_status'");
         $status = $stmt->fetchColumn() ?: 'not_started';
         
-        // CHECK FOR FORCE SYNC
+        // CHECK FOR FORCE SYNC (Run on page load or container start)
         if (isset($_POST['force_sync']) && $_POST['force_sync'] == '1') {
             $bytes = false;
             
-            // Regenerate file based on current DB status
-            if ($status === 'active') {
-                $bytes = generatePlaceholderPage("active", $targetFile);
-            } elseif ($status === 'paused') {
-                $bytes = generatePlaceholderPage("paused", $targetFile);
-            } elseif ($status === 'ended') {
+            if ($status === 'ended') {
+                // If ended, ensure results are visible
                 $bytes = generateFinalReport($pdo, $targetFile);
-            } else {
-                $bytes = generatePlaceholderPage("not_started", $targetFile);
+            } elseif ($status === 'not_started') {
+                // If not started (reset), ensure "Pending" page is visible
+                $bytes = generateNoResultsPage($targetFile);
             }
             
-            // Add sync results to debug output
             $response['debug']['force_sync_attempt'] = true;
             $response['debug']['bytes_written'] = $bytes;
-            $response['debug']['write_status'] = ($bytes !== false) ? "SUCCESS" : "FAILED";
+        }
+        // FAIL-SAFE: If file is missing completely, generate "No Results"
+        elseif (!file_exists($targetFile)) {
+             generateNoResultsPage($targetFile);
         }
         
         $response['success'] = true;
@@ -52,43 +50,38 @@ try {
         exit;
     }
 
-    // --- UPDATE STATUS (Standard Button Click) ---
+    // --- UPDATE STATUS ---
     if ($action === 'update_status') {
         $newStatus = $_POST['status'] ?? '';
         $now = date('Y-m-d H:i:s');
         
-        $response['debug']['action'] = "Updating to $newStatus";
-
         // 1. Update Database
         $pdo->prepare("REPLACE INTO settings (setting_key, setting_value) VALUES ('election_status', ?)")
             ->execute([$newStatus]);
 
         // 2. Logic & File Generation
-        $bytesWritten = 0;
+        $bytesWritten = false;
 
         if ($newStatus === 'active') {
-            // Set Start Time if missing
             $check = $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'election_start_time'")->fetchColumn();
             if ($check == '2026-01-01 00:00:00' || !$check) {
                 $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = 'election_start_time'")->execute([$now]);
             }
-            $bytesWritten = generatePlaceholderPage("active", $targetFile);
+            // Active election = Do not change file (Keep it as "Pending")
         } 
-        elseif ($newStatus === 'paused') {
-            $bytesWritten = generatePlaceholderPage("paused", $targetFile);
-        }
         elseif ($newStatus === 'ended') {
             $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = 'election_end_time'")->execute([$now]);
+            // Election Over = Generate Real Results
             $bytesWritten = generateFinalReport($pdo, $targetFile);
         }
         elseif ($newStatus === 'not_started') {
-            $bytesWritten = generatePlaceholderPage("not_started", $targetFile);
+            // Reset/Not Started = Generate "No Results" Page
+            $bytesWritten = generateNoResultsPage($targetFile);
         }
 
         // 3. Return Success
         $response['success'] = true;
         $response['debug']['bytes_written'] = $bytesWritten;
-        $response['debug']['write_status'] = ($bytesWritten !== false) ? "SUCCESS" : "FAILED";
         
         echo json_encode($response);
         exit;
