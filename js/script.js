@@ -264,19 +264,31 @@ function showSummary() {
     showPage('pageSummary');
 }
 
-// 6. SUBMIT TO SERVER
 async function submitVote() {
     const submitBtn = document.querySelector('#pageSummary .btn-primary');
     submitBtn.disabled = true;
     submitBtn.innerText = "Submitting...";
 
-    const payload = {};
+    // 1. GET TOKEN
+    const token = localStorage.getItem('election_session_token');
+    if (!token) {
+        alert("Session Error: You are not logged in.");
+        location.reload();
+        return;
+    }
+
+    // 2. CONSTRUCT PAYLOAD (Token + Votes Wrapper)
+    const payload = {
+        token: token,
+        votes: {}
+    };
+
     positionKeys.forEach(key => {
         const selection = votes[key];
         if (selection === 'abstain') {
-            payload[key] = 'abstain';
-        } else if (selection !== null) {
-            payload[key] = candidates[key][selection].id;
+            payload.votes[key] = 'abstain';
+        } else if (selection !== null && candidates[key] && candidates[key][selection]) {
+            payload.votes[key] = candidates[key][selection].id;
         }
     });
 
@@ -288,21 +300,23 @@ async function submitVote() {
         });
 
         const result = await res.json();
+        
         if(result.success) {
             document.getElementById('votingUI').style.display = 'none';
             showPage('pageSuccess');
+            
+            // Clear session to prevent re-voting
+            localStorage.removeItem('election_session_token');
             
             setTimeout(() => {
                 location.reload();
             }, 3000);
         } else {
-            alert("Error submitting vote: " + result.message);
-            submitBtn.disabled = false;
-            submitBtn.innerText = "Submit Vote ✓";
+            throw new Error(result.message || "Server rejected vote");
         }
     } catch (err) {
         console.error(err);
-        alert("Network Error. Please try again.");
+        alert("Submission Failed: " + err.message);
         submitBtn.disabled = false;
         submitBtn.innerText = "Submit Vote ✓";
     }
