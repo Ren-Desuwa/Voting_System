@@ -27,8 +27,8 @@
       "tag:server"
     ],
     "Addrs": [
-      "131.226.100.67:31722",
-      "172.18.0.2:35815"
+      "131.226.100.67:57799",
+      "172.18.0.4:35374"
     ],
     "CurAddr": "",
     "Relay": "sin",
@@ -39,7 +39,7 @@
     "LastWrite": "0001-01-01T00:00:00Z",
     "LastSeen": "0001-01-01T00:00:00Z",
     "LastHandshake": "0001-01-01T00:00:00Z",
-    "Online": true,
+    "Online": false,
     "ExitNode": false,
     "ExitNodeOption": false,
     "Active": false,
