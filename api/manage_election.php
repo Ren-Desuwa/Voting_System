@@ -1,18 +1,16 @@
 <?php
 // vote/api/manage_election.php
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // Don't crash JSON with text errors
+ini_set('display_errors', 0);
 header('Content-Type: application/json');
 
 require '../db.php';
-require 'generate_results.php'; // <--- Imports the heavy lifting functions
+require 'generate_results.php'; 
 
 $action = $_POST['action'] ?? '';
-
-// Define the path explicitly using dirname to avoid ".." confusion
 $targetFile = dirname(__DIR__) . '/election.html';
 
-// Initialize Debug Response
+// Init response with Debug info
 $response = [
     'success' => false, 
     'debug' => [
@@ -22,15 +20,39 @@ $response = [
 ];
 
 try {
-    // --- GET STATUS ---
+    // --- GET STATUS (With Auto-Heal) ---
     if ($action === 'get_status') {
         $stmt = $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'election_status'");
         $status = $stmt->fetchColumn() ?: 'not_started';
-        echo json_encode(['success' => true, 'status' => $status]);
+        
+        // CHECK FOR FORCE SYNC
+        if (isset($_POST['force_sync']) && $_POST['force_sync'] == '1') {
+            $bytes = false;
+            
+            // Regenerate file based on current DB status
+            if ($status === 'active') {
+                $bytes = generatePlaceholderPage("active", $targetFile);
+            } elseif ($status === 'paused') {
+                $bytes = generatePlaceholderPage("paused", $targetFile);
+            } elseif ($status === 'ended') {
+                $bytes = generateFinalReport($pdo, $targetFile);
+            } else {
+                $bytes = generatePlaceholderPage("not_started", $targetFile);
+            }
+            
+            // Add sync results to debug output
+            $response['debug']['force_sync_attempt'] = true;
+            $response['debug']['bytes_written'] = $bytes;
+            $response['debug']['write_status'] = ($bytes !== false) ? "SUCCESS" : "FAILED";
+        }
+        
+        $response['success'] = true;
+        $response['status'] = $status;
+        echo json_encode($response);
         exit;
     }
 
-    // --- UPDATE STATUS ---
+    // --- UPDATE STATUS (Standard Button Click) ---
     if ($action === 'update_status') {
         $newStatus = $_POST['status'] ?? '';
         $now = date('Y-m-d H:i:s');

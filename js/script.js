@@ -2,13 +2,13 @@
 // 1. DYNAMIC DATA CONTAINERS
 let positionNames = {};
 let candidates = {};
-let positionKeys = []; // ["pos_1", "pos_2", etc.]
-let votes = {};        // Stores the user's choices: { "pos_1": 2, "pos_2": 0 }
-let currentStep = 0;   // 0 = Home, 1+ = Voting
+let positionKeys = []; 
+let votes = {};        
+let currentStep = 1;   
 
 // 2. INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
-    loadBallot(); // Fetch data immediately in the background
+    loadBallot(); 
 });
 
 // 3. FETCH DATA FROM SERVER
@@ -18,12 +18,10 @@ async function loadBallot() {
         const res = await fetch('api/get_ballot.php');
         const data = await res.json();
 
-        // Save data to global variables
         positionNames = data.positionNames;
         candidates = data.candidates;
         positionKeys = Object.keys(positionNames);
         
-        // Initialize votes object with nulls
         votes = {};
         positionKeys.forEach(key => votes[key] = null);
         
@@ -39,6 +37,7 @@ function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(pageId).classList.add('active');
 }
+
 async function startVoting() {
     // 1. UI Check
     if (positionKeys.length === 0) {
@@ -46,7 +45,8 @@ async function startVoting() {
         return;
     }
 
-    const token = localStorage.getItem('session_token');
+    // --- FIX 1: MATCH THE KEY USED IN AUTH.JS ---
+    const token = localStorage.getItem('election_session_token'); 
 
     try {
         // 2. Validate Session and Status in parallel
@@ -68,14 +68,15 @@ async function startVoting() {
 
         // 3. Logic Gate
         if (statusData.status !== 'active') {
-            alert("Voting is currently " + statusData.status);
-            window.location.href = 'election.html';
+            // --- FIX 2: ALERT ONLY, DO NOT REDIRECT ---
+            alert("⚠️ Voting Unavailable\n\nCurrent Status: " + (statusData.status || 'Offline').toUpperCase() + "\n\nPlease wait for the admin to open voting.");
+            // window.location.href = 'election.html'; // REMOVED
             return;
         }
 
         if (!sessionData.valid) {
             alert("⚠️ Security Alert: Session is no longer valid. The PIN may have changed.");
-            location.reload(); // Redirects to PIN entry
+            location.reload(); // Reloads to show PIN screen again
             return;
         }
 
@@ -88,6 +89,7 @@ async function startVoting() {
 
     } catch (e) {
         console.error("Auth check failed", e);
+        alert("System Error: Could not verify election status.");
     }
 }
 
@@ -108,16 +110,14 @@ function shuffleArray(array) {
 
 // 5. RENDER UI
 function renderCandidates() {
-    const key = positionKeys[currentStep - 1]; // e.g., "pos_1"
+    const key = positionKeys[currentStep - 1]; 
     const grid = document.getElementById('candidatesGrid');
     
-    // Update Header
     document.getElementById('displayPositionTitle').innerText = positionNames[key];
     document.getElementById('displayPositionSubtitle').innerText = `Select one candidate for ${positionNames[key]}`;
     
     grid.innerHTML = '';
     
-    // Create Cards
     if (candidates[key]) {
         candidates[key].forEach((candidate, index) => {
             const isSelected = votes[key] === index ? 'selected' : '';
@@ -125,7 +125,6 @@ function renderCandidates() {
             card.className = `candidate-card ${isSelected}`;
             card.onclick = () => selectCandidate(index, key);
 
-            // Handle Image (Use placeholder if empty)
             const photoContent = candidate.img 
                 ? `<img src="${candidate.img}" alt="${candidate.name}" onerror="this.onerror=null;this.src='assets/CZSHS_logo.png';">`
                 : `👤`;
@@ -144,7 +143,6 @@ function renderCandidates() {
         });
     }
     
-    // ADDED: Update abstain button state
     const abstainBtn = document.getElementById('abstainBtn');
     if (abstainBtn) {
         if (votes[key] === 'abstain') {
@@ -158,16 +156,12 @@ function renderCandidates() {
 function selectCandidate(index, key) {
     votes[key] = index;
     
-    // MODIFIED: Remove abstain selection when a candidate is selected
     const abstainBtn = document.getElementById('abstainBtn');
     if (abstainBtn) {
         abstainBtn.classList.remove('selected');
     }
     
-    // Find all cards in the grid
     const cards = document.querySelectorAll('.candidate-card');
-    
-    // Simply toggle the 'selected' class on the existing HTML elements
     cards.forEach((card, i) => {
         if (i === index) {
             card.classList.add('selected');
@@ -179,18 +173,13 @@ function selectCandidate(index, key) {
     updateUI(); 
 }
 
-// ADDED: Function to handle abstain selection
 function selectAbstain() {
     const currentKey = positionKeys[currentStep - 1];
-    
-    // Set vote to special value 'abstain'
     votes[currentKey] = 'abstain';
     
-    // Remove selection from all candidate cards
     const cards = document.querySelectorAll('.candidate-card');
     cards.forEach(card => card.classList.remove('selected'));
     
-    // Highlight abstain button
     const abstainBtn = document.getElementById('abstainBtn');
     abstainBtn.classList.add('selected');
     
@@ -201,20 +190,17 @@ function updateUI() {
     const currentKey = positionKeys[currentStep - 1];
     const nextBtn = document.getElementById('nextBtn');
     
-    // MODIFIED: Enable "Next" if a selection is made OR abstain is selected
     if (votes[currentKey] !== null) {
         nextBtn.disabled = false;
     } else {
         nextBtn.disabled = true;
     }
 
-    // Progress Bar & Page Numbers
     const totalSteps = positionKeys.length;
     document.getElementById('pageIndicator').innerText = `Step ${currentStep} of ${totalSteps}`;
     const progress = (currentStep / (totalSteps + 1)) * 100;
     document.getElementById('progressFill').style.width = `${progress}%`;
 
-    // Button Text (Last step says "Review")
     nextBtn.innerText = currentStep === totalSteps ? "Review Votes →" : "Next →";
 }
 
@@ -233,7 +219,6 @@ function handlePrevious() {
         currentStep--;
         showVotingPage();
     } else {
-        // Confirm before quitting
         if(confirm("Cancel voting and return to home screen?")) {
             location.reload();
         }
@@ -247,23 +232,18 @@ function showSummary() {
     positionKeys.forEach(key => {
         const selection = votes[key];
         
-        // MODIFIED: Handle abstain votes
         if (selection === 'abstain') {
             const item = document.createElement('div');
             item.className = 'summary-item';
             item.innerHTML = `
                 <div class="summary-position">${positionNames[key]}</div>
-                <div class="summary-candidate-photo">
-                    ⊘
-                </div>
+                <div class="summary-candidate-photo">⊘</div>
                 <div class="summary-candidate">Abstained</div>
                 <div class="summary-party">No vote cast for this position</div>
             `;
             content.appendChild(item);
         } else {
             const candidate = candidates[key][selection];
-            
-            // Handle Image (Use placeholder if empty)
             const photoContent = candidate.img 
                 ? `<img src="${candidate.img}" alt="${candidate.name}" onerror="this.onerror=null;this.src='assets/CZSHS_logo.png';">`
                 : `👤`;
@@ -272,9 +252,7 @@ function showSummary() {
             item.className = 'summary-item';
             item.innerHTML = `
                 <div class="summary-position">${positionNames[key]}</div>
-                <div class="summary-candidate-photo">
-                    ${photoContent}
-                </div>
+                <div class="summary-candidate-photo">${photoContent}</div>
                 <div class="summary-candidate">${candidate.name}</div>
                 <div class="summary-party">${candidate.party || 'Independent'}</div>
             `;
@@ -292,15 +270,12 @@ async function submitVote() {
     submitBtn.disabled = true;
     submitBtn.innerText = "Submitting...";
 
-    // MODIFIED: Prepare payload handling abstain votes
     const payload = {};
     positionKeys.forEach(key => {
         const selection = votes[key];
         if (selection === 'abstain') {
-            // Send 'abstain' as a special value to the server
             payload[key] = 'abstain';
         } else if (selection !== null) {
-            // Get the actual Database ID from the candidate object
             payload[key] = candidates[key][selection].id;
         }
     });
@@ -317,8 +292,6 @@ async function submitVote() {
             document.getElementById('votingUI').style.display = 'none';
             showPage('pageSuccess');
             
-            // AUTO-RESET after 3 seconds for the next voter
-            console.log("Resetting in 3 seconds...");
             setTimeout(() => {
                 location.reload();
             }, 3000);

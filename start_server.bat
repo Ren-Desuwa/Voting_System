@@ -1,4 +1,4 @@
-@echo off
+
 TITLE Election System Manager
 setlocal EnableDelayedExpansion
 

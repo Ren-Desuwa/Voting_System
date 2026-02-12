@@ -11,10 +11,13 @@ let electionControlRefreshInterval = null;
 let lastKnownStatus = null;
  // For drag-and-drop position reordering
 
+// 1. UPDATE INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
     loadPositions();
     loadPartyList();
-    renderSettingsMode();
+    
+    // FORCE SYNC: Pass 'true' to regenerate the election.html file immediately
+    renderElectionControl(true); 
 });
 // Clean up interval when leaving the page or switching tabs
 document.addEventListener('visibilitychange', () => {
@@ -1307,9 +1310,10 @@ async function finishElection() {
         btn.disabled = false;
     }
 }
-
 // Global variable to track state
-async function renderElectionControl() {
+
+// Call this from your DOMContentLoaded listener: renderElectionControl(true);
+async function renderElectionControl(forceSync = false) {
     // 1. Sidebar Active State
     const navElection = document.getElementById('nav-election');
     if (navElection && !navElection.classList.contains('active')) {
@@ -1320,15 +1324,21 @@ async function renderElectionControl() {
     const container = document.getElementById('setupDynamicContent');
     
     // Check if panel exists to decide if we need a loading state
+    // We don't show loading if we are just syncing in the background
     if (!document.getElementById('election-control-panel')) {
         container.innerHTML = '<div style="padding:40px; text-align:center; color:#999;">Loading Control Room...</div>';
     }
 
     try {
+        // 2. FETCH STATUS (With Force Sync Flag)
+        const params = new URLSearchParams();
+        params.append('action', 'get_status');
+        if (forceSync) params.append('force_sync', '1');
+
         const res = await fetch('api/manage_election.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'action=get_status'
+            body: params
         });
         
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1336,10 +1346,16 @@ async function renderElectionControl() {
         const data = await res.json();
         const currentStatus = data.status || 'not_started';
 
-        // --- CHECK: Only re-render if status changed OR if the panel is missing ---
+        // Log sync result if debugging
+        if (forceSync && data.debug) {
+            console.log("🔄 Force Sync Result:", data.debug.write_status);
+        }
+
+        // 3. CHECK: Only re-render if status changed OR if the panel is missing
+        // IMPORTANT: If forceSync is true, we ignore this check to ensure UI is fresh
         const panelExists = document.getElementById('election-control-panel');
         
-        if (currentStatus === lastKnownStatus && panelExists) {
+        if (currentStatus === lastKnownStatus && panelExists && !forceSync) {
             console.log('📊 Status unchanged. Skipping re-render.');
             return; 
         }
@@ -1347,7 +1363,7 @@ async function renderElectionControl() {
         // Update global tracker
         lastKnownStatus = currentStatus;
 
-        // 2. UI Configuration
+        // 4. UI Configuration
         let config = {
             'not_started': { color: '#f39c12', text: 'NOT STARTED', sub: 'Waiting for admin to open lines.' },
             'active':      { color: '#27ae60', text: 'ACTIVE', sub: 'Voting is OPEN. Timestamps enabled.' },
@@ -1355,12 +1371,12 @@ async function renderElectionControl() {
             'ended':       { color: '#2c3e50', text: 'FINALIZED', sub: 'Election is OVER. Results generated.' }
         }[currentStatus] || { color: '#7f8c8d', text: 'UNKNOWN', sub: '' };
 
-        // 3. Render UI (Clean version without Monitoring Badge)
+        // 5. Render UI
         container.innerHTML = `
             <div id="election-control-panel" class="col-content" style="grid-column: 2 / 4; background: white; padding: 30px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <h2 style="margin:0;">🗳️ Election Control Room</h2>
-                    </div>
+                </div>
 
                 <div style="background:${config.color}; color:white; padding:30px; border-radius:12px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.1); margin-bottom:30px;">
                     <div style="font-size:0.9em; opacity:0.9; letter-spacing:1px; text-transform:uppercase;">Current Status</div>
