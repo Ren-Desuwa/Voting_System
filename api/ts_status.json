@@ -27,10 +27,8 @@
       "tag:server"
     ],
     "Addrs": [
-      "103.186.138.51:59133",
-      "43.240.55.18:59133",
-      "103.167.116.89:59133",
-      "172.18.0.2:59133"
+      "131.226.100.67:31722",
+      "172.18.0.2:35815"
     ],
     "CurAddr": "",
     "Relay": "sin",
@@ -168,7 +166,7 @@
       "TxBytes": 0,
       "Created": "2026-02-11T03:05:50.818366352Z",
       "LastWrite": "0001-01-01T00:00:00Z",
-      "LastSeen": "2026-02-11T09:40:55.1Z",
+      "LastSeen": "2026-02-11T23:19:02.1Z",
       "LastHandshake": "0001-01-01T00:00:00Z",
       "Online": false,
       "ExitNode": false,
@@ -268,6 +266,48 @@
       "InMagicSock": true,
       "InEngine": false
     },
+    "nodekey:418853ef885f66221f297c4fd6a5076c03d80deed451a9db9acc611b0a97121a": {
+      "ID": "nnB1LUHNX511CNTRL",
+      "PublicKey": "nodekey:418853ef885f66221f297c4fd6a5076c03d80deed451a9db9acc611b0a97121a",
+      "HostName": "czshs-vote",
+      "DNSName": "czshs-vote-17.tail97fe4a.ts.net.",
+      "OS": "linux",
+      "UserID": 8955825070651393,
+      "TailscaleIPs": [
+        "100.87.18.27",
+        "fd7a:115c:a1e0::a35:121b"
+      ],
+      "AllowedIPs": [
+        "100.87.18.27/32",
+        "fd7a:115c:a1e0::a35:121b/128"
+      ],
+      "Tags": [
+        "tag:server"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "hkg",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2026-02-12T00:12:00.169407029Z",
+      "LastWrite": "0001-01-01T00:00:00Z",
+      "LastSeen": "2026-02-12T00:28:53.1Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": false,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.87.18.27:55320",
+        "http://[fd7a:115c:a1e0::a35:121b]:55320"
+      ],
+      "TaildropTarget": 5,
+      "NoFileSharingReason": "",
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false
+    },
     "nodekey:427c6cdc28616a212e26256dd674a0d60b09ad131027a822da42d0c3696f1407": {
       "ID": "n71dpJ2CNTRL",
       "PublicKey": "nodekey:427c6cdc28616a212e26256dd674a0d60b09ad131027a822da42d0c3696f1407",
@@ -292,7 +332,7 @@
       "TxBytes": 0,
       "Created": "1973-11-11T00:00:00.1Z",
       "LastWrite": "0001-01-01T00:00:00Z",
-      "LastSeen": "2026-02-11T12:44:38.1Z",
+      "LastSeen": "0001-01-01T00:00:00Z",
       "LastHandshake": "0001-01-01T00:00:00Z",
       "Online": true,
       "ExitNode": false,
@@ -348,6 +388,48 @@
       "InMagicSock": true,
       "InEngine": false
     },
+    "nodekey:4f5d88e479afd78631a0ff601cef57224be949cd8b83a6d1018c99edb8ef6840": {
+      "ID": "ncBmXxaXgr11CNTRL",
+      "PublicKey": "nodekey:4f5d88e479afd78631a0ff601cef57224be949cd8b83a6d1018c99edb8ef6840",
+      "HostName": "czshs-vote",
+      "DNSName": "czshs-vote-16.tail97fe4a.ts.net.",
+      "OS": "linux",
+      "UserID": 8955825070651393,
+      "TailscaleIPs": [
+        "100.111.104.65",
+        "fd7a:115c:a1e0::b835:6841"
+      ],
+      "AllowedIPs": [
+        "100.111.104.65/32",
+        "fd7a:115c:a1e0::b835:6841/128"
+      ],
+      "Tags": [
+        "tag:server"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "hkg",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2026-02-12T00:02:45.15933515Z",
+      "LastWrite": "0001-01-01T00:00:00Z",
+      "LastSeen": "2026-02-12T00:05:50.1Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": false,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.111.104.65:50598",
+        "http://[fd7a:115c:a1e0::b835:6841]:50598"
+      ],
+      "TaildropTarget": 5,
+      "NoFileSharingReason": "",
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false
+    },
     "nodekey:527b221e1af576d50f880d889d2d681cfd3fdc65316c49584d693b8ffbbacd7d": {
       "ID": "n8krqLAcqR11CNTRL",
       "PublicKey": "nodekey:527b221e1af576d50f880d889d2d681cfd3fdc65316c49584d693b8ffbbacd7d",
@@ -390,6 +472,90 @@
       "InMagicSock": true,
       "InEngine": false
     },
+    "nodekey:5aeacd801dcdb9c014249c2851c5e24d4e137cfc2a4e71739c308f4088dc301c": {
+      "ID": "nVw8gbWwZR11CNTRL",
+      "PublicKey": "nodekey:5aeacd801dcdb9c014249c2851c5e24d4e137cfc2a4e71739c308f4088dc301c",
+      "HostName": "czshs-vote",
+      "DNSName": "czshs-vote-19.tail97fe4a.ts.net.",
+      "OS": "linux",
+      "UserID": 8955825070651393,
+      "TailscaleIPs": [
+        "100.92.48.29",
+        "fd7a:115c:a1e0::8835:301d"
+      ],
+      "AllowedIPs": [
+        "100.92.48.29/32",
+        "fd7a:115c:a1e0::8835:301d/128"
+      ],
+      "Tags": [
+        "tag:server"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "hkg",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2026-02-12T00:30:15.566592029Z",
+      "LastWrite": "0001-01-01T00:00:00Z",
+      "LastSeen": "2026-02-12T00:31:25.1Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": false,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.92.48.29:54508",
+        "http://[fd7a:115c:a1e0::8835:301d]:54508"
+      ],
+      "TaildropTarget": 5,
+      "NoFileSharingReason": "",
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false
+    },
+    "nodekey:667c4a27970f7ed8036c91701ead6d52168d1d3557936d864bbbeb48b7885732": {
+      "ID": "nreZPh7maG11CNTRL",
+      "PublicKey": "nodekey:667c4a27970f7ed8036c91701ead6d52168d1d3557936d864bbbeb48b7885732",
+      "HostName": "czshs-vote",
+      "DNSName": "czshs-vote-14.tail97fe4a.ts.net.",
+      "OS": "linux",
+      "UserID": 8955825070651393,
+      "TailscaleIPs": [
+        "100.72.87.51",
+        "fd7a:115c:a1e0::b735:5733"
+      ],
+      "AllowedIPs": [
+        "100.72.87.51/32",
+        "fd7a:115c:a1e0::b735:5733/128"
+      ],
+      "Tags": [
+        "tag:server"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "hkg",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2026-02-11T23:53:25.084133419Z",
+      "LastWrite": "0001-01-01T00:00:00Z",
+      "LastSeen": "2026-02-11T23:55:04.1Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": false,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.72.87.51:45039",
+        "http://[fd7a:115c:a1e0::b735:5733]:45039"
+      ],
+      "TaildropTarget": 5,
+      "NoFileSharingReason": "",
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false
+    },
     "nodekey:6b67ca5b08f21411d897a0a806b9ce0225aef0a579e15756f588ee1cda4fdb43": {
       "ID": "nMHGVp9uBz11CNTRL",
       "PublicKey": "nodekey:6b67ca5b08f21411d897a0a806b9ce0225aef0a579e15756f588ee1cda4fdb43",
@@ -407,13 +573,13 @@
       ],
       "Addrs": null,
       "CurAddr": "",
-      "Relay": "sin",
+      "Relay": "hkg",
       "PeerRelay": "",
       "RxBytes": 0,
       "TxBytes": 0,
       "Created": "2026-01-30T05:08:09.955063881Z",
       "LastWrite": "0001-01-01T00:00:00Z",
-      "LastSeen": "2026-02-11T17:17:33.1Z",
+      "LastSeen": "0001-01-01T00:00:00Z",
       "LastHandshake": "0001-01-01T00:00:00Z",
       "Online": true,
       "ExitNode": false,
@@ -469,6 +635,48 @@
       "InMagicSock": true,
       "InEngine": false,
       "KeyExpiry": "2026-08-07T14:27:41Z"
+    },
+    "nodekey:8cf7a435c3c150b4d2a4e9cc7a5d47a3e9cd500d66807e7f86e3b8a936cd2a05": {
+      "ID": "nY7FSGB2D621CNTRL",
+      "PublicKey": "nodekey:8cf7a435c3c150b4d2a4e9cc7a5d47a3e9cd500d66807e7f86e3b8a936cd2a05",
+      "HostName": "czshs-vote",
+      "DNSName": "czshs-vote-22.tail97fe4a.ts.net.",
+      "OS": "linux",
+      "UserID": 8955825070651393,
+      "TailscaleIPs": [
+        "100.77.42.6",
+        "fd7a:115c:a1e0::3635:2a06"
+      ],
+      "AllowedIPs": [
+        "100.77.42.6/32",
+        "fd7a:115c:a1e0::3635:2a06/128"
+      ],
+      "Tags": [
+        "tag:server"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "hkg",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2026-02-12T01:16:04.175280994Z",
+      "LastWrite": "0001-01-01T00:00:00Z",
+      "LastSeen": "2026-02-12T01:16:45.1Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": false,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.77.42.6:44700",
+        "http://[fd7a:115c:a1e0::3635:2a06]:44700"
+      ],
+      "TaildropTarget": 5,
+      "NoFileSharingReason": "",
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false
     },
     "nodekey:913e89eb44e24108bac47421a610230d45d7e2f3762c2f3c61ec4813b69edd37": {
       "ID": "niDa3wMftw11CNTRL",
@@ -532,7 +740,7 @@
       "TxBytes": 0,
       "Created": "1973-11-11T00:00:00.1Z",
       "LastWrite": "0001-01-01T00:00:00Z",
-      "LastSeen": "2026-02-11T12:44:38.1Z",
+      "LastSeen": "0001-01-01T00:00:00Z",
       "LastHandshake": "0001-01-01T00:00:00Z",
       "Online": true,
       "ExitNode": false,
@@ -542,6 +750,90 @@
       "TaildropTarget": 9,
       "NoFileSharingReason": "",
       "ShareeNode": true,
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false
+    },
+    "nodekey:99ff5ab15f85e23bbbec37194b72aebb205c07542798acaf31c9235587bd5c17": {
+      "ID": "nf3FhY5ih911CNTRL",
+      "PublicKey": "nodekey:99ff5ab15f85e23bbbec37194b72aebb205c07542798acaf31c9235587bd5c17",
+      "HostName": "czshs-vote",
+      "DNSName": "czshs-vote-21.tail97fe4a.ts.net.",
+      "OS": "linux",
+      "UserID": 8955825070651393,
+      "TailscaleIPs": [
+        "100.125.92.24",
+        "fd7a:115c:a1e0::8735:5c18"
+      ],
+      "AllowedIPs": [
+        "100.125.92.24/32",
+        "fd7a:115c:a1e0::8735:5c18/128"
+      ],
+      "Tags": [
+        "tag:server"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "hkg",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2026-02-12T01:13:42.497784162Z",
+      "LastWrite": "0001-01-01T00:00:00Z",
+      "LastSeen": "2026-02-12T01:15:52.1Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": false,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.125.92.24:43039",
+        "http://[fd7a:115c:a1e0::8735:5c18]:43039"
+      ],
+      "TaildropTarget": 5,
+      "NoFileSharingReason": "",
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false
+    },
+    "nodekey:a7f8392458e3000f7236598ba9b5e7e5df0856f1e3c3a0cbdbc67528def5467e": {
+      "ID": "nNwGKuAj7421CNTRL",
+      "PublicKey": "nodekey:a7f8392458e3000f7236598ba9b5e7e5df0856f1e3c3a0cbdbc67528def5467e",
+      "HostName": "czshs-vote",
+      "DNSName": "czshs-vote-13.tail97fe4a.ts.net.",
+      "OS": "linux",
+      "UserID": 8955825070651393,
+      "TailscaleIPs": [
+        "100.117.70.127",
+        "fd7a:115c:a1e0::de35:467f"
+      ],
+      "AllowedIPs": [
+        "100.117.70.127/32",
+        "fd7a:115c:a1e0::de35:467f/128"
+      ],
+      "Tags": [
+        "tag:server"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "hkg",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2026-02-11T23:51:57.758345421Z",
+      "LastWrite": "0001-01-01T00:00:00Z",
+      "LastSeen": "2026-02-11T23:53:04.1Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": false,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.117.70.127:63367",
+        "http://[fd7a:115c:a1e0::de35:467f]:63367"
+      ],
+      "TaildropTarget": 5,
+      "NoFileSharingReason": "",
       "InNetworkMap": true,
       "InMagicSock": true,
       "InEngine": false
@@ -570,7 +862,7 @@
       "TxBytes": 0,
       "Created": "1973-11-11T00:00:00.1Z",
       "LastWrite": "0001-01-01T00:00:00Z",
-      "LastSeen": "2026-02-11T12:44:38.1Z",
+      "LastSeen": "0001-01-01T00:00:00Z",
       "LastHandshake": "0001-01-01T00:00:00Z",
       "Online": true,
       "ExitNode": false,
@@ -608,7 +900,7 @@
       "TxBytes": 0,
       "Created": "1973-11-11T00:00:00.1Z",
       "LastWrite": "0001-01-01T00:00:00Z",
-      "LastSeen": "2026-02-11T12:44:38.1Z",
+      "LastSeen": "0001-01-01T00:00:00Z",
       "LastHandshake": "0001-01-01T00:00:00Z",
       "Online": true,
       "ExitNode": false,
@@ -688,7 +980,7 @@
       "TxBytes": 0,
       "Created": "1973-11-11T00:00:00.1Z",
       "LastWrite": "0001-01-01T00:00:00Z",
-      "LastSeen": "2026-02-11T12:44:38.1Z",
+      "LastSeen": "0001-01-01T00:00:00Z",
       "LastHandshake": "0001-01-01T00:00:00Z",
       "Online": true,
       "ExitNode": false,
@@ -726,7 +1018,7 @@
       "TxBytes": 0,
       "Created": "1973-11-11T00:00:00.1Z",
       "LastWrite": "0001-01-01T00:00:00Z",
-      "LastSeen": "2026-02-11T12:44:38.1Z",
+      "LastSeen": "0001-01-01T00:00:00Z",
       "LastHandshake": "0001-01-01T00:00:00Z",
       "Online": true,
       "ExitNode": false,
@@ -775,6 +1067,132 @@
       "PeerAPIURL": [
         "http://100.89.93.64:44708",
         "http://[fd7a:115c:a1e0::bb35:5d40]:44708"
+      ],
+      "TaildropTarget": 5,
+      "NoFileSharingReason": "",
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false
+    },
+    "nodekey:d91733e894965e545207737da029598c1b71c12aa8b3ae3c162e072b84afbc22": {
+      "ID": "nyCpfC2rqS11CNTRL",
+      "PublicKey": "nodekey:d91733e894965e545207737da029598c1b71c12aa8b3ae3c162e072b84afbc22",
+      "HostName": "czshs-vote",
+      "DNSName": "czshs-vote-20.tail97fe4a.ts.net.",
+      "OS": "linux",
+      "UserID": 8955825070651393,
+      "TailscaleIPs": [
+        "100.111.188.35",
+        "fd7a:115c:a1e0::8435:bc23"
+      ],
+      "AllowedIPs": [
+        "100.111.188.35/32",
+        "fd7a:115c:a1e0::8435:bc23/128"
+      ],
+      "Tags": [
+        "tag:server"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "hkg",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2026-02-12T00:32:19.273471476Z",
+      "LastWrite": "0001-01-01T00:00:00Z",
+      "LastSeen": "2026-02-12T00:42:52.1Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": false,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.111.188.35:50633",
+        "http://[fd7a:115c:a1e0::8435:bc23]:50633"
+      ],
+      "TaildropTarget": 5,
+      "NoFileSharingReason": "",
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false
+    },
+    "nodekey:da32bc96675b8eaca56c5515cb02cb5c3d601e85b581642e724694765c9e8d42": {
+      "ID": "n9ew4wCVwS11CNTRL",
+      "PublicKey": "nodekey:da32bc96675b8eaca56c5515cb02cb5c3d601e85b581642e724694765c9e8d42",
+      "HostName": "czshs-vote",
+      "DNSName": "czshs-vote-15.tail97fe4a.ts.net.",
+      "OS": "linux",
+      "UserID": 8955825070651393,
+      "TailscaleIPs": [
+        "100.94.141.67",
+        "fd7a:115c:a1e0::5c35:8d43"
+      ],
+      "AllowedIPs": [
+        "100.94.141.67/32",
+        "fd7a:115c:a1e0::5c35:8d43/128"
+      ],
+      "Tags": [
+        "tag:server"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "hkg",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2026-02-12T00:00:55.792063808Z",
+      "LastWrite": "0001-01-01T00:00:00Z",
+      "LastSeen": "2026-02-12T00:02:42.1Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": false,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.94.141.67:44164",
+        "http://[fd7a:115c:a1e0::5c35:8d43]:44164"
+      ],
+      "TaildropTarget": 5,
+      "NoFileSharingReason": "",
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false
+    },
+    "nodekey:e00934941ae1579a25dadc48e272b82f48a461a669d9dc02932cdb4b6e2a827e": {
+      "ID": "neVvtrDMuV11CNTRL",
+      "PublicKey": "nodekey:e00934941ae1579a25dadc48e272b82f48a461a669d9dc02932cdb4b6e2a827e",
+      "HostName": "czshs-vote",
+      "DNSName": "czshs-vote-12.tail97fe4a.ts.net.",
+      "OS": "linux",
+      "UserID": 8955825070651393,
+      "TailscaleIPs": [
+        "100.106.130.127",
+        "fd7a:115c:a1e0::6e35:827f"
+      ],
+      "AllowedIPs": [
+        "100.106.130.127/32",
+        "fd7a:115c:a1e0::6e35:827f/128"
+      ],
+      "Tags": [
+        "tag:server"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "hkg",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2026-02-11T23:50:30.747638312Z",
+      "LastWrite": "0001-01-01T00:00:00Z",
+      "LastSeen": "2026-02-11T23:51:35.1Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": false,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.106.130.127:33152",
+        "http://[fd7a:115c:a1e0::6e35:827f]:33152"
       ],
       "TaildropTarget": 5,
       "NoFileSharingReason": "",
@@ -848,7 +1266,7 @@
       "TxBytes": 0,
       "Created": "1973-11-11T00:00:00.1Z",
       "LastWrite": "0001-01-01T00:00:00Z",
-      "LastSeen": "2026-02-11T12:44:38.1Z",
+      "LastSeen": "0001-01-01T00:00:00Z",
       "LastHandshake": "0001-01-01T00:00:00Z",
       "Online": true,
       "ExitNode": false,
@@ -858,6 +1276,48 @@
       "TaildropTarget": 9,
       "NoFileSharingReason": "",
       "ShareeNode": true,
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false
+    },
+    "nodekey:f6cbf248783bb45e8fb5a8a64497d1e1771796c0d244bf4d3cfa484c16e0e232": {
+      "ID": "nZg1Qq7kAj11CNTRL",
+      "PublicKey": "nodekey:f6cbf248783bb45e8fb5a8a64497d1e1771796c0d244bf4d3cfa484c16e0e232",
+      "HostName": "czshs-vote",
+      "DNSName": "czshs-vote-18.tail97fe4a.ts.net.",
+      "OS": "linux",
+      "UserID": 8955825070651393,
+      "TailscaleIPs": [
+        "100.96.226.51",
+        "fd7a:115c:a1e0::1635:e233"
+      ],
+      "AllowedIPs": [
+        "100.96.226.51/32",
+        "fd7a:115c:a1e0::1635:e233/128"
+      ],
+      "Tags": [
+        "tag:server"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "hkg",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2026-02-12T00:28:53.236248932Z",
+      "LastWrite": "0001-01-01T00:00:00Z",
+      "LastSeen": "2026-02-12T00:29:36.1Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": false,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.96.226.51:57930",
+        "http://[fd7a:115c:a1e0::1635:e233]:57930"
+      ],
+      "TaildropTarget": 5,
+      "NoFileSharingReason": "",
       "InNetworkMap": true,
       "InMagicSock": true,
       "InEngine": false
@@ -897,6 +1357,48 @@
       "PeerAPIURL": [
         "http://100.108.97.26:51402",
         "http://[fd7a:115c:a1e0::435:611a]:51402"
+      ],
+      "TaildropTarget": 5,
+      "NoFileSharingReason": "",
+      "InNetworkMap": true,
+      "InMagicSock": true,
+      "InEngine": false
+    },
+    "nodekey:ffc5f4e897382558396478ae58ab2ab95f9a1377aecf970db7a73bd733e22175": {
+      "ID": "nKsEV5nHSm11CNTRL",
+      "PublicKey": "nodekey:ffc5f4e897382558396478ae58ab2ab95f9a1377aecf970db7a73bd733e22175",
+      "HostName": "czshs-vote",
+      "DNSName": "czshs-vote-11.tail97fe4a.ts.net.",
+      "OS": "linux",
+      "UserID": 8955825070651393,
+      "TailscaleIPs": [
+        "100.98.33.118",
+        "fd7a:115c:a1e0::3335:2176"
+      ],
+      "AllowedIPs": [
+        "100.98.33.118/32",
+        "fd7a:115c:a1e0::3335:2176/128"
+      ],
+      "Tags": [
+        "tag:server"
+      ],
+      "Addrs": null,
+      "CurAddr": "",
+      "Relay": "hkg",
+      "PeerRelay": "",
+      "RxBytes": 0,
+      "TxBytes": 0,
+      "Created": "2026-02-11T23:19:12.043168921Z",
+      "LastWrite": "0001-01-01T00:00:00Z",
+      "LastSeen": "2026-02-11T23:49:53.1Z",
+      "LastHandshake": "0001-01-01T00:00:00Z",
+      "Online": false,
+      "ExitNode": false,
+      "ExitNodeOption": false,
+      "Active": false,
+      "PeerAPIURL": [
+        "http://100.98.33.118:34742",
+        "http://[fd7a:115c:a1e0::3335:2176]:34742"
       ],
       "TaildropTarget": 5,
       "NoFileSharingReason": "",
