@@ -305,8 +305,8 @@ async function submitVote() {
             document.getElementById('votingUI').style.display = 'none';
             showPage('pageSuccess');
             
-            // Clear session to prevent re-voting
-            localStorage.removeItem('election_session_token');
+            // // Clear session to prevent re-voting
+            // localStorage.removeItem('election_session_token');
             
             setTimeout(() => {
                 location.reload();
